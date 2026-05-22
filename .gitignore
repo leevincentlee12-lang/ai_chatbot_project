@@ -1,0 +1,25 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store
+*.egg-info/
+dist/
+build/
+# Local feedback config with secrets
+feedback_config.json
+# Virtual environment
+.venv/
+# Backup test shim
+test_ai_backup.py

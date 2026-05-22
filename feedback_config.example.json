@@ -1,0 +1,10 @@
+{
+  "form_url": "https://docs.google.com/forms/d/e/FORM_ID/formResponse",
+  "mappings": {
+    "question": "entry.1111111111",
+    "rating": "entry.2222222222",
+    "comment": "entry.3333333333",
+    "subject": "entry.4444444444",
+    "topic": "entry.5555555555"
+  }
+}

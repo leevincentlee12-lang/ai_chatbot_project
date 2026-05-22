@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Askademic AI Helper</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <div class="header-copy">
+        <div class="eyebrow">Algebra Tutor</div>
+        <h1>Algebra support with selectable response modes for consistent testing.</h1>
+        <p>
+          This interface now restricts chat responses to algebra problems only.
+          Choose `Direct`, `Step-by-step`, or `Hint` before you ask.
+        </p>
+      </div>
+
+      <nav class="header-actions" aria-label="Primary">
+        <a class="ghost-button" href="/learn">How It Works</a>
+        <a class="ghost-button" href="https://docs.google.com/forms/d/1zCPQUL-JPHzyoZOJNecOuL_dO-goD2vjUDuqXn7HemI/viewform" target="_blank" rel="noopener">Give Feedback</a>
+        <button class="ghost-button" type="button" id="show-progress">Show Progress</button>
+        <button class="ghost-button" type="button" id="show-skills">Show Skills</button>
+      </nav>
+    </header>
+
+    <section class="panel hero-panel">
+      <div>
+        <h2>Start with a useful prompt</h2>
+        <div class="chip-row">
+          <button class="chip-button" type="button" data-suggest="solve 3x + 5 = 20">solve 3x + 5 = 20</button>
+          <button class="chip-button" type="button" data-suggest="factor x^2 - 9">factor x^2 - 9</button>
+          <button class="chip-button" type="button" data-suggest="simplify 2x + 3x - 4">simplify 2x + 3x - 4</button>
+          <button class="chip-button" type="button" data-suggest="simplify the ratio 6:9">simplify the ratio 6:9</button>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <button class="action-button" type="button" id="open-lesson-library">Browse Lessons</button>
+        <button class="action-button" type="button" id="show-analytics">System Analytics</button>
+        <button class="action-button" type="button" id="view-feedback">Feedback Snapshot</button>
+      </div>
+    </section>
+
+    <section class="panel lesson-panel">
+      <div class="section-heading">
+        <h2>Lesson Library</h2>
+        <p>Choose a topic and load a structured lesson with worked examples, common mistakes, and practice prompts.</p>
+      </div>
+
+      <div id="lessonGrid" class="lesson-grid">
+        <div class="status-card">Loading lesson topics...</div>
+      </div>
+    </section>
+
+    <main class="workspace">
+      <section class="panel chat-panel">
+        <div class="section-heading">
+          <h2>Chat</h2>
+          <p>Ask an algebra question and choose the exact response mode you want.</p>
+        </div>
+
+        <div id="messages" class="message-stream" aria-live="polite"></div>
+
+        <div class="input-row">
+          <select id="modeSelect" aria-label="Response mode">
+            <option value="">Choose mode</option>
+            <option value="direct">Direct</option>
+            <option value="step-by-step">Step-by-step</option>
+            <option value="hint">Hint</option>
+          </select>
+          <input id="question" type="text" placeholder="Type an algebra question..." autocomplete="off">
+          <button id="ask" class="primary-button" type="button">Ask</button>
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="panel utility-panel">
+          <div class="section-heading">
+            <h2>Practice</h2>
+            <p>Generate a problem, solve it, then submit your answer.</p>
+          </div>
+
+          <div class="button-row">
+            <button class="ghost-button" type="button" id="practice-easy">Easy</button>
+            <button class="ghost-button" type="button" id="practice-medium">Medium</button>
+            <button class="ghost-button" type="button" id="practice-hard">Hard</button>
+          </div>
+
+          <div id="practiceProblem" class="status-card">
+            No active problem. Generate one to begin.
+          </div>
+
+          <div class="input-stack">
+            <label for="studentAnswer">Your answer</label>
+            <input id="studentAnswer" type="text" placeholder="Example: x = 5">
+            <button id="submit-answer" class="primary-button" type="button">Submit Answer</button>
+          </div>
+        </section>
+
+        <section class="panel utility-panel">
+          <div class="section-heading">
+            <h2>System Data</h2>
+            <p>View analytics and saved feedback without leaving the page.</p>
+          </div>
+
+          <pre id="analyticsBox" class="data-box">No analytics loaded.</pre>
+          <pre id="feedbackBox" class="data-box">No feedback loaded.</pre>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
