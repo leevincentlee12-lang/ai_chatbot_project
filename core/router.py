@@ -12,7 +12,7 @@ from core.classifier import (
     classify_subject,
     detect_topic,
 )
-from core.progression import record_question_asked, student_profile
+from core.progression import record_question, update_last_question_time
 from data.constants import (
     EXPERIMENT_MODE_PROMPT,
     EXPERIMENT_RESTRICTED_MESSAGE,
@@ -77,12 +77,12 @@ def get_followups(subject, topic, question=""):
     return FOLLOWUPS_BY_SUBJECT.get(subject, FOLLOWUPS_BY_SUBJECT["Unknown"])
 
 
-def academic_engine(question):
+def academic_engine(question, user_id=None):
     """Dispatch a question to the matching subject engine."""
     subject = classify_subject(question)
 
     if subject == "Math":
-        return handle_math(question)
+        return handle_math(question, user_id=user_id)
 
     if subject == "Science":
         return handle_science(question)
@@ -96,7 +96,7 @@ def academic_engine(question):
     return general_explainer(question)
 
 
-def answer_question(question, mode=None, version=None):
+def answer_question(question, mode=None, version=None, user_id=None):
     """Answer an experiment-scoped algebra question with routing metadata."""
     text = (question or "").strip()
     if not text:
@@ -113,15 +113,17 @@ def answer_question(question, mode=None, version=None):
     elif version == "v2":
         use_hybrid = True
 
-    try:
-        student_profile["last_question_ts"] = time.time()
-    except Exception:
-        pass
-
-    record_question_asked()
+    update_last_question_time(time.time(), user_id=user_id)
     cleaned_text = _strip_mode_instruction(text)
 
     if not _is_algebra_question(cleaned_text, use_hybrid=use_hybrid):
+        record_question(
+            text,
+            subject="Restricted",
+            topic="Restricted Scope",
+            mode=mode,
+            user_id=user_id,
+        )
         return {
             "answer": EXPERIMENT_RESTRICTED_MESSAGE,
             "subject": "Restricted",
@@ -131,6 +133,13 @@ def answer_question(question, mode=None, version=None):
 
     resolved_mode = _resolve_experiment_mode(text, mode)
     if resolved_mode is None:
+        record_question(
+            text,
+            subject="Math",
+            topic="Mode Selection",
+            mode=mode,
+            user_id=user_id,
+        )
         return {
             "answer": EXPERIMENT_MODE_PROMPT,
             "subject": "Math",
@@ -140,6 +149,13 @@ def answer_question(question, mode=None, version=None):
 
     answer = answer_experiment_algebra_question(cleaned_text, resolved_mode)
     topic = _detect_experiment_topic(cleaned_text)
+    record_question(
+        cleaned_text,
+        subject="Math",
+        topic=topic,
+        mode=resolved_mode,
+        user_id=user_id,
+    )
 
     return {
         "answer": answer,

@@ -54,6 +54,23 @@ INTENTS: Dict[str, IntentDefinition] = {
             "solve the quadratic x^2 - 9 = 0",
         ),
     ),
+    "explain_discriminant": IntentDefinition(
+        name="explain_discriminant",
+        patterns=(
+            r"\b(?:explain|find|calculate|work\s+out|what\s+is)\b.*\bdiscriminant\b",
+            r"\bdiscriminant\b.*(?:x\^?2|quadratic)",
+            r"\bdiscriminant\b.*=",
+        ),
+        keywords=("discriminant", "quadratic", "x^2", "roots", "explain"),
+        topic="Quadratic Equations",
+        engine="math",
+        difficulty=3,
+        examples=(
+            "explain the discriminant in x^2 - 4x + 3 = 0",
+            "find the discriminant of x^2 + 5x + 6 = 0",
+            "what is the discriminant of this quadratic",
+        ),
+    ),
     "factoring": IntentDefinition(
         name="factoring",
         patterns=(
@@ -137,6 +154,23 @@ INTENTS: Dict[str, IntentDefinition] = {
             "solve x+y=5 and x-y=1",
             "solve simultaneous equations x + y = 7 and x - y = 1",
             "use elimination for 2x + y = 11 and x - y = 1",
+        ),
+    ),
+    "linear_graph_form": IntentDefinition(
+        name="linear_graph_form",
+        patterns=(
+            r"\by\s*=\s*m\s*x\s*[+\-]\s*c\b",
+            r"\by\s*=\s*mx\s*[+\-]\s*c\b",
+            r"\bmx\s*[+\-]\s*c\b",
+        ),
+        keywords=("linear graph", "straight line", "gradient", "intercept", "mx"),
+        topic="Linear Graphs",
+        engine="math",
+        difficulty=2,
+        examples=(
+            "explain y = mx + c",
+            "what does y = mx + c mean",
+            "explain the straight line equation y = mx + c",
         ),
     ),
     "gradient": IntentDefinition(

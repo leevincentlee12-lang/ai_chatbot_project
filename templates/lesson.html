@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ lesson.title }} | Adaptive Algebra Learning Platform</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <nav class="top-nav" aria-label="Primary">
+        <a class="brand-mark" href="/">Adaptive Algebra</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/#lessons">Lessons</a>
+          <a href="/practice">Practice</a>
+          <a href="/progress-page">Progress</a>
+          <a href="/about">About</a>
+        </div>
+      </nav>
+
+      <div class="hero-layout lesson-hero">
+        <div class="hero-copy">
+          <div class="eyebrow">{{ lesson.strand }} | {{ lesson.level }}</div>
+          <h1>{{ lesson.title }}</h1>
+          <p>{{ lesson.summary }}</p>
+        </div>
+
+        <aside class="overview-panel" aria-label="Lesson navigation">
+          <h2>Lesson Sections</h2>
+          <ol class="learning-steps">
+            <li><a href="#core-idea">Core idea</a></li>
+            <li><a href="#key-points">Key points</a></li>
+            <li><a href="#worked-example">Worked example</a></li>
+            <li><a href="#common-mistakes">Common mistakes</a></li>
+            <li><a href="#practice-prompts">Practice prompts</a></li>
+          </ol>
+        </aside>
+      </div>
+    </header>
+
+    <main class="lesson-page-grid">
+      <article class="lesson-content">
+        <section id="core-idea" class="lesson-section-card">
+          <div class="lesson-section-label">Core Idea</div>
+          <p>{{ lesson.explanation }}</p>
+        </section>
+
+        <section id="key-points" class="lesson-section-card">
+          <div class="lesson-section-label">Key Points</div>
+          {% if lesson.key_points %}
+            <ul class="lesson-list">
+              {% for point in lesson.key_points %}
+                <li>{{ point }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>No key points are available for this lesson yet.</p>
+          {% endif %}
+        </section>
+
+        <section id="worked-example" class="lesson-section-card worked-example-card">
+          <div class="lesson-section-label">Worked Example</div>
+          {% if lesson.example %}
+            <pre class="worked-example">{{ lesson.example }}</pre>
+          {% else %}
+            <p>No worked example is available for this lesson yet.</p>
+          {% endif %}
+        </section>
+
+        <section id="common-mistakes" class="lesson-section-card">
+          <div class="lesson-section-label">Common Mistakes</div>
+          {% if lesson.common_mistakes %}
+            <ul class="lesson-list mistakes-list">
+              {% for mistake in lesson.common_mistakes %}
+                <li>{{ mistake }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>No common mistakes are available for this lesson yet.</p>
+          {% endif %}
+        </section>
+
+        <section id="practice-prompts" class="lesson-section-card">
+          <div class="lesson-section-label">Practice Prompts</div>
+          {% if lesson.practice_prompts %}
+            <div class="prompt-grid">
+              {% for prompt in lesson.practice_prompts %}
+                <a class="prompt-card" href="/#workspace">{{ prompt }}</a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p>No practice prompts are available for this lesson yet.</p>
+          {% endif %}
+        </section>
+      </article>
+
+      <aside class="lesson-sidebar">
+        <section class="lesson-section-card">
+          <div class="lesson-section-label">Topic Summary</div>
+          <p>{{ lesson.summary }}</p>
+          <a class="primary-button" href="/practice">Open Practice Mode</a>
+        </section>
+
+        {% if lesson.related_lessons %}
+          <section class="lesson-section-card">
+            <div class="lesson-section-label">Related Lessons</div>
+            <div class="related-lesson-list">
+              {% for related in lesson.related_lessons %}
+                <a href="/lessons/{{ related.topic }}">{{ related.title }}</a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        <section class="lesson-section-card">
+          <div class="lesson-section-label">Lesson Library</div>
+          <div class="related-lesson-list">
+            {% for item in lessons %}
+              <a href="/lessons/{{ item.topic }}">{{ item.title }}</a>
+            {% endfor %}
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

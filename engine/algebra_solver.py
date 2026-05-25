@@ -4,7 +4,14 @@ import re
 
 from sympy import Poly, factor as sympy_factor, simplify, solve
 
-from core.parser import _equation_to_expression, parse_math_expression, x, y
+from core.parser import (
+    MATH_PARSE_ERROR_MESSAGE,
+    _equation_to_expression,
+    has_obvious_malformed_math_input,
+    parse_math_expression,
+    x,
+    y,
+)
 from utils.formatting import (
     _build_explanation,
     _format_expression,
@@ -17,7 +24,12 @@ def _parse_linear_equation(eq):
     """Analyse a plain linear equation into coefficient totals and solution data."""
     equation = (eq or "").replace(" ", "")
 
-    if equation.count("=") != 1 or "y" in equation or "^" in equation:
+    if (
+        equation.count("=") != 1
+        or has_obvious_malformed_math_input(equation)
+        or "y" in equation
+        or "^" in equation
+    ):
         return None
 
     if "/" in equation or re.search(r"\d\(", equation):
@@ -26,9 +38,17 @@ def _parse_linear_equation(eq):
     left, right = equation.split("=", 1)
 
     def parse_side(side):
+        if not side:
+            raise ValueError("Empty equation side.")
+
+        normalized = side if side[0] in "+-" else f"+{side}"
+        terms = re.findall(r"[+-](?:\d*x|\d+)", normalized)
+
+        if not terms or "".join(terms) != normalized:
+            raise ValueError("Unsupported linear equation side.")
+
         a_value = 0
         b_value = 0
-        terms = re.findall(r"[+-]?\d*x|[+-]?\d+", side)
 
         for term in terms:
             if "x" in term:
@@ -184,7 +204,7 @@ def solve_simultaneous(eq1, eq2):
         expr2 = _equation_to_expression(eq2)
         solutions = solve((expr1, expr2), (x, y), dict=True)
     except Exception:
-        return "Unable to parse those equations."
+        return MATH_PARSE_ERROR_MESSAGE
 
     if len(solutions) != 1:
         return "No unique solution."
@@ -220,7 +240,7 @@ def factor_expression(expr):
         parsed = simplify(parse_math_expression(expression))
         factored = sympy_factor(parsed)
     except Exception:
-        return "Unable to parse that expression."
+        return MATH_PARSE_ERROR_MESSAGE
 
     if simplify(factored - parsed) != 0:
         return "Unable to factor that expression safely."
@@ -245,6 +265,9 @@ def factor_expression(expr):
 
 def solve_value(eq):
     """Solve an equation for a single numeric x-value when possible."""
+    if has_obvious_malformed_math_input(eq):
+        return None
+
     try:
         solution = solve(_equation_to_expression(eq), x)
     except Exception:
@@ -261,6 +284,9 @@ def solve_value(eq):
 
 def sympy_solve_equation(eq):
     """Solve an equation symbolically when the manual linear solver does not apply."""
+    if has_obvious_malformed_math_input(eq):
+        return MATH_PARSE_ERROR_MESSAGE
+
     value = solve_value(eq)
     if value is None:
         return None

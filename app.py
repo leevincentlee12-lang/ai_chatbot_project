@@ -2,18 +2,25 @@ import json
 import os
 import tempfile
 import traceback
+import uuid
 from datetime import datetime
 from pathlib import Path
 import urllib.request
 import urllib.parse
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, session
 
+from core.session_memory import (
+    get_session_memory,
+    remember_active_practice_problem,
+    remember_current_lesson,
+)
 from homework_helper import (
     answer_question,
     evaluate_answer_details,
     generate_lesson,
     generate_problem,
+    get_learning_state,
     get_student_skills,
     get_student_stats,
     list_lessons,
@@ -22,6 +29,10 @@ from homework_helper import (
 )
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get(
+    "SECRET_KEY",
+    "dev-only-homework-helper-secret",
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 FEEDBACK_LOG_PATH = BASE_DIR / "feedback_log.json"
@@ -40,6 +51,20 @@ _feedback_config_cache = _UNLOADED
 def _json_payload():
     payload = request.get_json(silent=True)
     return payload if isinstance(payload, dict) else {}
+
+
+def _current_user_id():
+    """Return the anonymous browser user id stored in the Flask session."""
+    if "user_id" not in session:
+        session["user_id"] = uuid.uuid4().hex
+    return session["user_id"]
+
+
+def _learning_state_payload():
+    """Return persistent learning state plus lightweight session memory."""
+    state = get_learning_state(user_id=_current_user_id())
+    state.update(get_session_memory(session))
+    return state
 
 
 def _load_feedback_logs():
@@ -144,6 +169,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+
 @app.route("/ask", methods=["POST"])
 def ask():
     data = _json_payload()
@@ -158,7 +188,7 @@ def ask():
             "followups": [],
         }), 400
 
-    result = answer_question(question, mode=mode)
+    result = answer_question(question, mode=mode, user_id=_current_user_id())
     return jsonify(result)
 
 
@@ -212,7 +242,17 @@ def feedback():
 
 @app.route("/learn")
 def learn():
-    return render_template("learn.html")
+    return render_template("about.html")
+
+
+@app.route("/practice")
+def practice_mode():
+    return render_template("practice.html")
+
+
+@app.route("/progress-page")
+def progress_page():
+    return render_template("progress.html")
 
 
 @app.route("/analytics")
@@ -240,7 +280,8 @@ def analytics():
 
 @app.route("/practice/<int:level>")
 def practice(level):
-    problem = generate_problem(level)
+    problem = generate_problem(level, user_id=_current_user_id())
+    remember_active_practice_problem(session, problem, level=level)
     return jsonify({
         "skill": problem["skill"],
         "problem": problem["problem"],
@@ -250,8 +291,22 @@ def practice(level):
 
 @app.route("/lesson/<topic>")
 def lesson(topic):
-    record_lesson_completed()
-    return jsonify(generate_lesson(topic))
+    record_lesson_completed(user_id=_current_user_id())
+    lesson_data = generate_lesson(topic)
+    remember_current_lesson(session, lesson_data)
+    return jsonify(lesson_data)
+
+
+@app.route("/lessons/<topic>")
+def lesson_page(topic):
+    record_lesson_completed(user_id=_current_user_id())
+    lesson_data = generate_lesson(topic)
+    remember_current_lesson(session, lesson_data)
+    return render_template(
+        "lesson.html",
+        lesson=lesson_data,
+        lessons=list_lessons(),
+    )
 
 
 @app.route("/lessons")
@@ -261,12 +316,12 @@ def lessons():
 
 @app.route("/skills")
 def skills():
-    return jsonify(get_student_skills())
+    return jsonify(get_student_skills(user_id=_current_user_id()))
 
 
 @app.route("/progress")
 def progress():
-    stats = get_student_stats()
+    stats = get_student_stats(user_id=_current_user_id())
     attempted = stats["problems_attempted"]
     accuracy = round(
         stats["correct_answers"] / attempted * 100,
@@ -282,6 +337,11 @@ def progress():
     })
 
 
+@app.route("/learning-state")
+def learning_state():
+    return jsonify(_learning_state_payload())
+
+
 @app.route("/check-answer", methods=["POST"])
 def check_answer():
     data = _json_payload()
@@ -294,7 +354,11 @@ def check_answer():
     if not answer:
         return jsonify({"result": "No answer provided."}), 400
 
-    result = evaluate_answer_details(equation, answer)
+    result = evaluate_answer_details(
+        equation,
+        answer,
+        user_id=_current_user_id(),
+    )
     return jsonify(result)
 
 

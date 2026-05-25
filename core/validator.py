@@ -3,7 +3,9 @@
 from sympy import simplify, solve
 
 from core.parser import (
+    MATH_PARSE_ERROR_MESSAGE,
     _equation_to_expression,
+    has_obvious_malformed_math_input,
     normalise_equation,
     normalise_expression,
     parse_math_expression,
@@ -100,7 +102,7 @@ def diagnose_error(prev_step, current_step):
 
         return "The transformation changed the equation structure unexpectedly."
     except Exception:
-        return "Unable to analyse this transformation."
+        return MATH_PARSE_ERROR_MESSAGE
 
 
 def generate_hint(prev_step, current_step):
@@ -119,6 +121,12 @@ def generate_hint(prev_step, current_step):
 
 def check_student_answer(expr1, expr2):
     """Compare two expressions or equations for equivalence."""
+    if (
+        has_obvious_malformed_math_input(expr1)
+        or has_obvious_malformed_math_input(expr2)
+    ):
+        return MATH_PARSE_ERROR_MESSAGE
+
     if "=" in expr1 and "=" in expr2:
         return "Equivalent" if equations_equivalent(expr1, expr2) else "Not equivalent"
 
@@ -131,10 +139,18 @@ def validate_steps(steps):
         return "Not enough steps to validate."
 
     report = []
+    cleaned_steps = [str(step or "").strip() for step in steps]
 
-    for index in range(1, len(steps)):
-        prev_step = steps[index - 1].strip()
-        current_step = steps[index].strip()
+    for index, step in enumerate(cleaned_steps, start=1):
+        if has_obvious_malformed_math_input(step):
+            return (
+                f"Step {index} could not be read.\n\n"
+                f"{MATH_PARSE_ERROR_MESSAGE}"
+            )
+
+    for index in range(1, len(cleaned_steps)):
+        prev_step = cleaned_steps[index - 1]
+        current_step = cleaned_steps[index]
         transformation_type = classify_transformation(prev_step, current_step)
 
         if transformation_type == "redundant":
@@ -159,7 +175,7 @@ def validate_steps(steps):
                 f"Warning at step {index + 1}: equation complexity increased."
             )
 
-        if index >= 2 and current_step == steps[index - 2].strip():
+        if index >= 2 and current_step == cleaned_steps[index - 2]:
             return (
                 f"Reversal detected at step {index + 1}. "
                 "You returned to a previous state."

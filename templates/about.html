@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About | Adaptive Algebra Learning Platform</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <nav class="top-nav" aria-label="Primary">
+        <a class="brand-mark" href="/">Adaptive Algebra</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/#lessons">Lessons</a>
+          <a href="/practice">Practice</a>
+          <a href="/progress-page">Progress</a>
+          <a href="/about">About</a>
+        </div>
+      </nav>
+
+      <div class="hero-layout about-hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Project Overview</div>
+          <h1>An educational platform for guided algebra learning.</h1>
+          <p>
+            This project is designed to support algebra study through structured
+            explanations, practice problems, answer checking, lessons, and progress
+            tracking. It focuses on explainable learning behaviour rather than a
+            black-box conversation model.
+          </p>
+        </div>
+
+        <div class="overview-panel" aria-label="Project summary">
+          <h2>Current Focus</h2>
+          <ol class="learning-steps">
+            <li>Classify algebra learning requests.</li>
+            <li>Route work to the correct engine.</li>
+            <li>Generate structured educational responses.</li>
+            <li>Track practice progress across a browser session.</li>
+          </ol>
+        </div>
+      </div>
+    </header>
+
+    <main class="about-page">
+      <section class="section-block two-column-section">
+        <div class="section-heading">
+          <h2>Purpose</h2>
+          <p>
+            The platform helps students practise algebra in a focused environment.
+            It can solve supported equations, explain methods, validate algebraic
+            steps, generate practice questions, and show progress indicators based
+            on real activity inside the app.
+          </p>
+        </div>
+        <div class="status-card">
+          The project is strongest in algebra workflows such as linear equations,
+          quadratics, factorising, simplifying expressions, simultaneous equations,
+          hints, step validation, and generated practice.
+        </div>
+      </section>
+
+      <section class="section-block">
+        <div class="section-heading centered-heading">
+          <h2>Educational Goals</h2>
+          <p>
+            The system is built around clarity, feedback, and measurable progress.
+            It aims to help a learner understand both the answer and the method.
+          </p>
+        </div>
+        <div class="about-card-grid">
+          <article class="about-card">
+            <h3>Structured Explanations</h3>
+            <p>Responses are presented as answer, method, why, check, and next step sections.</p>
+          </article>
+          <article class="about-card">
+            <h3>Adaptive Practice</h3>
+            <p>Practice questions use the existing progression system to adjust difficulty.</p>
+          </article>
+          <article class="about-card">
+            <h3>Learning Evidence</h3>
+            <p>Progress pages show attempts, correct answers, accuracy, skill scores, and recent activity.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block about-grid">
+        <div>
+          <div class="section-heading">
+            <h2>Technologies Used</h2>
+            <p>The stack is intentionally simple so the project is easy to run, explain, and maintain.</p>
+          </div>
+          <ul class="info-list">
+            <li>Python and Flask for routes, APIs, and server-side templates</li>
+            <li>SymPy for algebra parsing, simplification, factoring, and solving</li>
+            <li>SQLite-backed state storage for anonymous learning progress</li>
+            <li>HTML, CSS, and JavaScript for the responsive frontend interface</li>
+            <li>GitHub for version control and Render for public deployment</li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="section-heading">
+            <h2>Deployment Details</h2>
+            <p>The public version is deployed as a Flask web service connected to the GitHub repository.</p>
+          </div>
+          <ul class="info-list">
+            <li>Render builds and runs the Flask app from the repository</li>
+            <li>GitHub Desktop is used to commit and push changes</li>
+            <li>The free Render instance may sleep after inactivity</li>
+            <li>Current storage is suitable for a demonstration, not long-term production records</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section-block">
+        <div class="section-heading">
+          <h2>System Architecture</h2>
+          <p>
+            The project is separated into routing, classification, engines, validation,
+            progression, formatting, and data modules. This keeps the app easier to
+            extend without rewriting the whole codebase.
+          </p>
+        </div>
+
+        <div class="architecture-flow" aria-label="Learning system flow">
+          <div class="flow-step">User Input</div>
+          <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+          <div class="flow-step">Router</div>
+          <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+          <div class="flow-step">Subject Engine</div>
+          <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+          <div class="flow-step">Solver</div>
+          <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+          <div class="flow-step">Feedback Generator</div>
+          <span class="flow-arrow" aria-hidden="true">&rarr;</span>
+          <div class="flow-step">Progress Tracking</div>
+        </div>
+
+        <p class="architecture-flow-note">
+          A student question moves through routing, subject-specific handling,
+          solving, structured feedback, and progress updates.
+        </p>
+
+        <div class="architecture-map">
+          <article>
+            <h3>app.py</h3>
+            <p>Flask routes, JSON endpoints, pages, sessions, and request handling.</p>
+          </article>
+          <article>
+            <h3>core/</h3>
+            <p>Routing support, deterministic classification, parsing, validation, progression, and state storage.</p>
+          </article>
+          <article>
+            <h3>engine/</h3>
+            <p>Subject engines and algebra workflows, including solving, practice, lessons, and answer checking.</p>
+          </article>
+          <article>
+            <h3>data/</h3>
+            <p>Lesson content, constants, and intent definitions used by the classifier.</p>
+          </article>
+          <article>
+            <h3>utils/</h3>
+            <p>Shared formatting helpers for readable educational responses.</p>
+          </article>
+          <article>
+            <h3>templates/ and static/</h3>
+            <p>Responsive pages, styling, and browser-side interaction logic.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block two-column-section">
+        <div class="section-heading">
+          <h2>Future Improvements</h2>
+          <p>
+            The next useful improvements should make the platform more reliable,
+            measurable, and classroom-ready rather than adding unnecessary features.
+          </p>
+        </div>
+        <ul class="info-list">
+          <li>Add user accounts if long-term individual progress needs to be preserved</li>
+          <li>Move persistent learning data to a hosted database for production deployment</li>
+          <li>Expand test coverage around intent routing and algebra edge cases</li>
+          <li>Add teacher-facing summaries only after the student data model is stable</li>
+          <li>Broaden the lesson set while keeping algebra as the clearest strength</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

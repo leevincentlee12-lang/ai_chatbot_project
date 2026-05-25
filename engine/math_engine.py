@@ -39,7 +39,7 @@ from engine.math_modes import (
     answer_experiment_algebra_question,
 )
 from engine.math_practice import guided_response, start_guided_problem
-from engine.math_workflows import handle_math
+from engine.math_workflows import MATH_INTENTS, classify_math_request, handle_math
 
 
 __all__ = [
@@ -62,8 +62,10 @@ __all__ = [
     "evaluate_answer",
     "evaluate_answer_details",
     "factor_expression",
+    "classify_math_request",
     "guided_response",
     "handle_math",
+    "MATH_INTENTS",
     "solve_linear",
     "solve_quadratic",
     "solve_simultaneous",

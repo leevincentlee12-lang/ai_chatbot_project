@@ -1,9 +1,14 @@
 """Answer checking and diagnostic feedback for math practice."""
 
-from core.parser import _extract_numeric_answer
+from core.parser import (
+    MATH_PARSE_ERROR_MESSAGE,
+    _extract_numeric_answer,
+    has_obvious_malformed_math_input,
+)
 from core.progression import (
+    adjust_skill,
     detect_math_skill,
-    get_or_create_skill,
+    record_mistake,
     record_correct_answer,
     record_problem_attempt,
     update_progression,
@@ -82,8 +87,20 @@ def _diagnose_linear_answer(eq, student_value, correct):
     }
 
 
-def evaluate_answer_details(eq, student_answer):
+def evaluate_answer_details(eq, student_answer, user_id=None):
     """Evaluate a student's answer and return structured coaching feedback."""
+    if has_obvious_malformed_math_input(eq):
+        return {
+            "status": "error",
+            "headline": "Invalid Equation",
+            "result": MATH_PARSE_ERROR_MESSAGE,
+            "details": MATH_PARSE_ERROR_MESSAGE,
+            "next_steps": [
+                "Check that both sides of the equation are complete.",
+                "Use one equals sign, for example 2x + 4 = 10.",
+            ],
+        }
+
     correct = solve_value(eq)
     if correct is None:
         return {
@@ -105,16 +122,19 @@ def evaluate_answer_details(eq, student_answer):
             "next_steps": ["Use a single numeric value or x = value."],
         }
 
-    record_problem_attempt()
+    record_problem_attempt(user_id=user_id)
 
     skill = detect_math_skill(eq) or "linear_equations"
-    skill_data = get_or_create_skill(skill)
-    skill_data["attempts"] += 1
 
     if abs(correct - student_value) < 1e-9:
-        skill_data["score"] = min(100, max(0, skill_data["score"] + 5))
-        record_correct_answer()
-        level_message = update_progression(True)
+        skill_data = adjust_skill(
+            skill,
+            score_delta=5,
+            attempt_delta=1,
+            user_id=user_id,
+        )
+        record_correct_answer(user_id=user_id)
+        level_message = update_progression(True, user_id=user_id)
 
         details = _compose_message(
             _section("Result", f"Correct. x = {_format_value(correct)}"),
@@ -142,9 +162,22 @@ def evaluate_answer_details(eq, student_answer):
             ],
         }
 
-    skill_data["score"] = min(100, max(0, skill_data["score"] - 3))
-    update_progression(False)
+    skill_data = adjust_skill(
+        skill,
+        score_delta=-3,
+        attempt_delta=1,
+        user_id=user_id,
+    )
+    update_progression(False, user_id=user_id)
     diagnosis = _diagnose_linear_answer(eq, student_value, correct)
+    record_mistake(
+        skill=skill,
+        question=eq,
+        submitted_answer=student_answer,
+        correct_answer=f"x = {_format_value(correct)}",
+        issue=diagnosis["issue"],
+        user_id=user_id,
+    )
     details = _compose_message(
         _section("Result", f"Not correct yet. The correct answer is x = {_format_value(correct)}"),
         _section("Likely Issue", diagnosis["issue"]),
@@ -167,6 +200,6 @@ def evaluate_answer_details(eq, student_answer):
     }
 
 
-def evaluate_answer(eq, student_answer):
+def evaluate_answer(eq, student_answer, user_id=None):
     """Return the text-only version of structured answer feedback."""
-    return evaluate_answer_details(eq, student_answer)["details"]
+    return evaluate_answer_details(eq, student_answer, user_id=user_id)["details"]

@@ -3,87 +3,99 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Askademic AI Helper</title>
+  <title>Adaptive Algebra Learning Platform</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="page-shell">
-    <header class="site-header">
-      <div class="header-copy">
-        <div class="eyebrow">Algebra Tutor</div>
-        <h1>Algebra support with selectable response modes for consistent testing.</h1>
-        <p>
-          This interface now restricts chat responses to algebra problems only.
-          Choose `Direct`, `Step-by-step`, or `Hint` before you ask.
-        </p>
-      </div>
-
-      <nav class="header-actions" aria-label="Primary">
-        <a class="ghost-button" href="/learn">How It Works</a>
-        <a class="ghost-button" href="https://docs.google.com/forms/d/1zCPQUL-JPHzyoZOJNecOuL_dO-goD2vjUDuqXn7HemI/viewform" target="_blank" rel="noopener">Give Feedback</a>
-        <button class="ghost-button" type="button" id="show-progress">Show Progress</button>
-        <button class="ghost-button" type="button" id="show-skills">Show Skills</button>
+    <header id="home" class="site-header">
+      <nav class="top-nav" aria-label="Primary">
+        <a class="brand-mark" href="#home">Adaptive Algebra</a>
+        <div class="nav-links">
+          <a href="#home">Home</a>
+          <a href="#lessons">Lessons</a>
+          <a href="/practice">Practice</a>
+          <a href="/progress-page">Progress</a>
+          <a href="/about">About</a>
+        </div>
       </nav>
+
+      <div class="hero-layout">
+        <div class="hero-copy">
+          <div class="eyebrow">Educational Algebra System</div>
+          <h1>Guided algebra learning with structured practice and progress tracking.</h1>
+          <p>
+            Build fluency through direct answers, worked solutions, targeted hints,
+            adaptive practice, and evidence of skill growth.
+          </p>
+        </div>
+
+        <div class="overview-panel" aria-label="Platform overview">
+          <h2>Learning Flow</h2>
+          <ol class="learning-steps">
+            <li>Choose a response mode.</li>
+            <li>Work through an algebra task.</li>
+            <li>Practise at an appropriate level.</li>
+            <li>Review progress and skill mastery.</li>
+          </ol>
+        </div>
+      </div>
     </header>
 
-    <section class="panel hero-panel">
-      <div>
-        <h2>Start with a useful prompt</h2>
-        <div class="chip-row">
-          <button class="chip-button" type="button" data-suggest="solve 3x + 5 = 20">solve 3x + 5 = 20</button>
-          <button class="chip-button" type="button" data-suggest="factor x^2 - 9">factor x^2 - 9</button>
-          <button class="chip-button" type="button" data-suggest="simplify 2x + 3x - 4">simplify 2x + 3x - 4</button>
-          <button class="chip-button" type="button" data-suggest="simplify the ratio 6:9">simplify the ratio 6:9</button>
-        </div>
-      </div>
-
-      <div class="hero-actions">
-        <button class="action-button" type="button" id="open-lesson-library">Browse Lessons</button>
-        <button class="action-button" type="button" id="show-analytics">System Analytics</button>
-        <button class="action-button" type="button" id="view-feedback">Feedback Snapshot</button>
-      </div>
-    </section>
-
-    <section class="panel lesson-panel">
-      <div class="section-heading">
-        <h2>Lesson Library</h2>
-        <p>Choose a topic and load a structured lesson with worked examples, common mistakes, and practice prompts.</p>
-      </div>
-
-      <div id="lessonGrid" class="lesson-grid">
-        <div class="status-card">Loading lesson topics...</div>
-      </div>
-    </section>
-
-    <main class="workspace">
-      <section class="panel chat-panel">
-        <div class="section-heading">
-          <h2>Chat</h2>
-          <p>Ask an algebra question and choose the exact response mode you want.</p>
+    <main>
+      <section id="workspace" class="section-block primary-workspace">
+        <div class="section-heading centered-heading">
+          <h2>Guided Algebra Workspace</h2>
+          <p>Enter an algebra question and select the support style you need.</p>
         </div>
 
-        <div id="messages" class="message-stream" aria-live="polite"></div>
+        <div class="quick-actions" aria-label="Quick algebra tasks">
+          <button class="chip-button" type="button" data-suggest="solve 3x + 5 = 20">Solve a linear equation</button>
+          <button class="chip-button" type="button" data-suggest="factor x^2 - 9">Practise factoring</button>
+          <button class="chip-button" type="button" data-suggest="simplify 2x + 3x - 4">Simplify an expression</button>
+          <button class="chip-button" type="button" data-suggest="simplify the ratio 6:9">Simplify a ratio</button>
+        </div>
 
-        <div class="input-row">
-          <select id="modeSelect" aria-label="Response mode">
-            <option value="">Choose mode</option>
-            <option value="direct">Direct</option>
-            <option value="step-by-step">Step-by-step</option>
-            <option value="hint">Hint</option>
-          </select>
-          <input id="question" type="text" placeholder="Type an algebra question..." autocomplete="off">
-          <button id="ask" class="primary-button" type="button">Ask</button>
+        <section class="interaction-panel" aria-label="Algebra interaction">
+          <div id="messages" class="message-stream" aria-live="polite"></div>
+
+          <div class="input-row">
+            <select id="modeSelect" aria-label="Response mode">
+              <option value="">Choose mode</option>
+              <option value="direct">Direct</option>
+              <option value="step-by-step">Step-by-step</option>
+              <option value="hint">Hint</option>
+            </select>
+            <input id="question" type="text" placeholder="Enter an algebra question..." autocomplete="off">
+            <button id="ask" class="primary-button" type="button">Get Guidance</button>
+          </div>
+        </section>
+      </section>
+
+      <section id="lessons" class="section-block">
+        <div class="section-heading split-heading">
+          <div>
+            <h2>Structured Lesson Library</h2>
+            <p>Study worked examples, common mistakes, and targeted practice prompts.</p>
+          </div>
+          <button class="secondary-button" type="button" id="open-lesson-library">View Lessons</button>
+        </div>
+
+        <div id="lessonGrid" class="lesson-grid">
+          <div class="status-card">Loading lesson topics...</div>
         </div>
       </section>
 
-      <aside class="side-stack">
-        <section class="panel utility-panel">
-          <div class="section-heading">
-            <h2>Practice</h2>
-            <p>Generate a problem, solve it, then submit your answer.</p>
-          </div>
+      <section id="practice" class="section-block two-column-section">
+        <div class="section-heading">
+          <h2>Adaptive Practice</h2>
+          <p>Generate an algebra problem here, or open the full Practice Mode for focused retry-based practice.</p>
+          <a class="secondary-button" href="/practice">Open Practice Mode</a>
+        </div>
 
-          <div class="button-row">
+        <div class="practice-panel">
+          <div class="button-row" aria-label="Practice difficulty">
             <button class="ghost-button" type="button" id="practice-easy">Easy</button>
             <button class="ghost-button" type="button" id="practice-medium">Medium</button>
             <button class="ghost-button" type="button" id="practice-hard">Hard</button>
@@ -96,20 +108,68 @@
           <div class="input-stack">
             <label for="studentAnswer">Your answer</label>
             <input id="studentAnswer" type="text" placeholder="Example: x = 5">
-            <button id="submit-answer" class="primary-button" type="button">Submit Answer</button>
+            <button id="submit-answer" class="primary-button" type="button">Check Answer</button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section class="panel utility-panel">
-          <div class="section-heading">
-            <h2>System Data</h2>
-            <p>View analytics and saved feedback without leaving the page.</p>
+      <section id="progress" class="section-block two-column-section">
+        <div class="section-heading">
+          <h2>Progress and Learning Evidence</h2>
+          <p>Review progress signals, feedback summaries, and learning activity data.</p>
+          <a class="secondary-button" href="/progress-page">Open Progress Page</a>
+        </div>
+
+        <div class="evidence-panel">
+          <div class="student-dashboard" aria-label="Student learning dashboard">
+            <article class="metric-card">
+              <span>Questions answered</span>
+              <strong id="dash-questions">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Problems attempted</span>
+              <strong id="dash-attempted">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Correct answers</span>
+              <strong id="dash-correct">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Accuracy</span>
+              <strong id="dash-accuracy">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Current difficulty</span>
+              <strong id="dash-difficulty">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Current topic</span>
+              <strong id="dash-topic">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Weakest skill</span>
+              <strong id="dash-weakest">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Correct streak</span>
+              <strong id="dash-streak">Loading...</strong>
+            </article>
           </div>
 
-          <pre id="analyticsBox" class="data-box">No analytics loaded.</pre>
-          <pre id="feedbackBox" class="data-box">No feedback loaded.</pre>
-        </section>
-      </aside>
+          <div class="button-row" aria-label="Learning evidence actions">
+            <button class="ghost-button" type="button" id="refresh-dashboard">Refresh Dashboard</button>
+            <button class="ghost-button" type="button" id="show-progress">Progress Summary</button>
+            <button class="ghost-button" type="button" id="show-skills">Skill Mastery</button>
+            <button class="ghost-button" type="button" id="show-analytics">Learning Analytics</button>
+            <button class="ghost-button" type="button" id="view-feedback">Feedback Overview</button>
+          </div>
+
+          <div class="data-grid">
+            <pre id="analyticsBox" class="data-box">No analytics loaded.</pre>
+            <pre id="feedbackBox" class="data-box">No feedback loaded.</pre>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 

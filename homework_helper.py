@@ -50,15 +50,31 @@ _EXPORTS = {
         "student_steps",
         "guided_sessions",
         "detect_math_skill",
+        "adjust_skill",
+        "append_student_step",
+        "clear_guided_session",
+        "clear_student_steps",
         "generate_adaptive_problem",
         "generate_problem",
+        "get_difficulty",
+        "get_guided_session",
+        "get_learning_state",
+        "get_mistake_history",
+        "get_recent_questions",
         "get_or_create_skill",
+        "get_student_profile",
         "get_student_skills",
+        "get_student_steps",
         "get_student_stats",
+        "record_mistake",
         "record_correct_answer",
         "record_lesson_completed",
         "record_problem_attempt",
+        "record_question",
         "record_question_asked",
+        "set_current_topic",
+        "set_guided_session",
+        "update_last_question_time",
         "update_progression",
         "update_skill",
         "_clamp_score",
@@ -104,6 +120,7 @@ _EXPORTS = {
     },
     _math: {
         "answer_experiment_algebra_question",
+        "classify_math_request",
         "evaluate_answer",
         "evaluate_answer_details",
         "factor_expression",
@@ -130,6 +147,7 @@ _EXPORTS = {
         "_is_gradient_question",
         "_parse_linear_equation",
         "_ratio_parts",
+        "MATH_INTENTS",
     },
     _science: {
         "handle_science",
@@ -159,11 +177,16 @@ _ALIASES = {
 }
 
 
-def answer_question(question, mode=None, version=None):
+def answer_question(question, mode=None, version=None, user_id=None):
     """Delegate to the router while preserving legacy config mutation."""
     _classifier.HYBRID_MODE = HYBRID_MODE
     _classifier.understanding_model = understanding_model
-    return _router.answer_question(question, mode=mode, version=version)
+    return _router.answer_question(
+        question,
+        mode=mode,
+        version=version,
+        user_id=user_id,
+    )
 
 
 __all__ = sorted(

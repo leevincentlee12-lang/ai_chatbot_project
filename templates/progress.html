@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Progress | Adaptive Algebra Learning Platform</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <nav class="top-nav" aria-label="Primary">
+        <a class="brand-mark" href="/">Adaptive Algebra</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/#lessons">Lessons</a>
+          <a href="/practice">Practice</a>
+          <a href="/progress-page">Progress</a>
+          <a href="/about">About</a>
+        </div>
+      </nav>
+
+      <div class="hero-layout progress-hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Learning Evidence</div>
+          <h1>Student performance and algebra skill growth.</h1>
+          <p>
+            Review accuracy, skill mastery, difficulty level, and recent learning
+            activity based on actual platform usage.
+          </p>
+        </div>
+
+        <aside class="overview-panel" aria-label="Progress summary">
+          <h2>Summary</h2>
+          <ol class="learning-steps">
+            <li>Accuracy is calculated from checked practice answers.</li>
+            <li>Skill scores update through answer checking.</li>
+            <li>Recent activity comes from recorded questions.</li>
+          </ol>
+        </aside>
+      </div>
+    </header>
+
+    <main class="progress-page">
+      <section class="section-block">
+        <div class="section-heading split-heading">
+          <div>
+            <h2>Performance Snapshot</h2>
+            <p>These values are loaded from the existing student progression system.</p>
+          </div>
+          <button id="refreshProgressPage" class="secondary-button" type="button">Refresh</button>
+        </div>
+
+        <div class="student-dashboard progress-summary-grid">
+          <article class="metric-card">
+            <span>Accuracy</span>
+            <strong id="progressAccuracy">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Difficulty level</span>
+            <strong id="progressDifficulty">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Strongest skill</span>
+            <strong id="progressStrongest">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Weakest skill</span>
+            <strong id="progressWeakest">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Problems attempted</span>
+            <strong id="progressAttempted">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Correct answers</span>
+            <strong id="progressCorrect">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Questions asked</span>
+            <strong id="progressQuestions">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Correct streak</span>
+            <strong id="progressStreak">Loading...</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block progress-layout">
+        <article class="progress-panel">
+          <div class="section-heading">
+            <h2>Skill Scores</h2>
+            <p>Scores are shown as mastery-style progress bars from 0 to 100.</p>
+          </div>
+          <div id="skillScoreList" class="skill-score-list">
+            <div class="status-card">Loading skill scores...</div>
+          </div>
+        </article>
+
+        <aside class="progress-panel">
+          <div class="section-heading">
+            <h2>Recent Activity</h2>
+            <p>Recent questions and topics recorded during this learning session.</p>
+          </div>
+          <div id="recentActivityList" class="recent-activity-list">
+            <div class="status-card">Loading recent activity...</div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='progress.js') }}"></script>
+</body>
+</html>

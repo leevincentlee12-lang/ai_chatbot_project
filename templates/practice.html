@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Practice Mode | Adaptive Algebra Learning Platform</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <nav class="top-nav" aria-label="Primary">
+        <a class="brand-mark" href="/">Adaptive Algebra</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/#lessons">Lessons</a>
+          <a href="/practice">Practice</a>
+          <a href="/progress-page">Progress</a>
+          <a href="/about">About</a>
+        </div>
+      </nav>
+
+      <div class="hero-layout practice-hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Practice Mode</div>
+          <h1>Focused algebra practice with immediate feedback.</h1>
+          <p>
+            Generate a problem, submit your answer, review the feedback, and retry
+            before moving to the next task.
+          </p>
+        </div>
+
+        <div class="overview-panel" aria-label="Practice mode overview">
+          <h2>Practice Cycle</h2>
+          <ol class="learning-steps">
+            <li>Select a difficulty level.</li>
+            <li>Solve the generated algebra problem.</li>
+            <li>Check your answer instantly.</li>
+            <li>Retry or continue with a new problem.</li>
+          </ol>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section-block practice-mode-grid">
+        <div class="practice-mode-main">
+          <div class="section-heading">
+            <h2>Algebra Problem</h2>
+            <p>Choose a difficulty, then enter your answer in the form `x = value`.</p>
+          </div>
+
+          <div class="button-row" aria-label="Practice difficulty">
+            <button class="ghost-button" type="button" data-level="1">Easy</button>
+            <button class="ghost-button" type="button" data-level="2">Medium</button>
+            <button class="ghost-button" type="button" data-level="3">Hard</button>
+          </div>
+
+          <div id="practiceModeProblem" class="practice-problem-card" aria-live="polite">
+            Select a difficulty to generate your first algebra problem.
+          </div>
+
+          <div class="practice-answer-panel">
+            <label for="practiceModeAnswer">Your answer</label>
+            <div class="practice-answer-row">
+              <input id="practiceModeAnswer" type="text" placeholder="Example: x = 3" autocomplete="off">
+              <button id="practiceModeCheck" class="primary-button" type="button">Check Answer</button>
+            </div>
+            <div class="button-row">
+              <button id="practiceModeRetry" class="ghost-button" type="button">Retry Problem</button>
+              <button id="practiceModeNew" class="secondary-button" type="button">New Problem</button>
+            </div>
+          </div>
+
+          <div id="practiceModeFeedback" class="practice-feedback" aria-live="polite">
+            Feedback will appear after you check an answer.
+          </div>
+        </div>
+
+        <aside class="practice-mode-sidebar" aria-label="Practice progress">
+          <div class="section-heading">
+            <h2>Practice Progress</h2>
+            <p>These values come from the same progression system used across the platform.</p>
+          </div>
+
+          <div class="student-dashboard compact-dashboard">
+            <article class="metric-card">
+              <span>Problems attempted</span>
+              <strong id="practiceDashAttempted">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Correct answers</span>
+              <strong id="practiceDashCorrect">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Accuracy</span>
+              <strong id="practiceDashAccuracy">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Correct streak</span>
+              <strong id="practiceDashStreak">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Difficulty</span>
+              <strong id="practiceDashDifficulty">Loading...</strong>
+            </article>
+            <article class="metric-card">
+              <span>Weakest skill</span>
+              <strong id="practiceDashWeakest">Loading...</strong>
+            </article>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='practice.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Adaptive Algebra Learning Platform</title>
+  <rect width="64" height="64" rx="14" fill="#122033"/>
+  <path d="M18 46 30 16h8l12 30h-8l-2.2-6H28.1L26 46h-8Zm12.5-13h6.9L34 23.2 30.5 33Z" fill="#ffffff"/>
+  <path d="M14 50h36" stroke="#64d2ff" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -8,15 +8,38 @@ const analyticsBox = document.getElementById("analyticsBox");
 const feedbackBox = document.getElementById("feedbackBox");
 const lessonGrid = document.getElementById("lessonGrid");
 const lessonLibraryButton = document.getElementById("open-lesson-library");
+const dashboard = {
+  questions: document.getElementById("dash-questions"),
+  attempted: document.getElementById("dash-attempted"),
+  correct: document.getElementById("dash-correct"),
+  accuracy: document.getElementById("dash-accuracy"),
+  difficulty: document.getElementById("dash-difficulty"),
+  topic: document.getElementById("dash-topic"),
+  weakest: document.getElementById("dash-weakest"),
+  streak: document.getElementById("dash-streak"),
+};
 
 let currentProblem = null;
 let currentPracticePrompts = [];
 let lastQuestion = "";
 
+const RESPONSE_SECTION_LABELS = new Map([
+  ["answer", "Answer"],
+  ["result", "Answer"],
+  ["method", "Method"],
+  ["how to fix it", "Method"],
+  ["why", "Why"],
+  ["why it works", "Why"],
+  ["check", "Check"],
+  ["likely issue", "Check"],
+  ["mastery", "Progress"],
+  ["next step", "Next Step"],
+]);
+
 function appendMessage(text, who = "bot") {
   const element = document.createElement("div");
   element.className = `message ${who === "user" ? "user" : "bot"}`;
-  element.textContent = `${who === "user" ? "You: " : "AI: "}${text}`;
+  element.textContent = `${who === "user" ? "You: " : "Platform: "}${text}`;
   messagesDiv.appendChild(element);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
@@ -25,7 +48,7 @@ function appendLoading() {
   const element = document.createElement("div");
   element.className = "message bot";
   element.id = "loading";
-  element.innerHTML = 'AI: <span class="dots">Thinking</span>';
+  element.innerHTML = 'Platform: <span class="dots">Preparing guidance</span>';
   messagesDiv.appendChild(element);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
@@ -35,6 +58,72 @@ function removeLoading() {
   if (element) {
     element.remove();
   }
+}
+
+function normaliseSectionHeading(line) {
+  return RESPONSE_SECTION_LABELS.get(String(line || "").trim().toLowerCase()) || null;
+}
+
+function parseResponseSections(text) {
+  const rawText = String(text || "").trim();
+  if (!rawText) {
+    return [{ title: "Answer", body: "No answer available." }];
+  }
+
+  const sections = [];
+  let current = null;
+
+  rawText.split(/\r?\n/).forEach((line) => {
+    const heading = normaliseSectionHeading(line);
+    if (heading) {
+      if (current && current.body.length > 0) {
+        sections.push({
+          title: current.title,
+          body: current.body.join("\n").trim(),
+        });
+      }
+      current = { title: heading, body: [] };
+      return;
+    }
+
+    if (!current) {
+      current = { title: "Answer", body: [] };
+    }
+    current.body.push(line);
+  });
+
+  if (current && current.body.length > 0) {
+    sections.push({
+      title: current.title,
+      body: current.body.join("\n").trim(),
+    });
+  }
+
+  const cleaned = sections.filter((section) => section.body);
+  return cleaned.length > 0 ? cleaned : [{ title: "Answer", body: rawText }];
+}
+
+function renderEducationalResponse(text) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "response-sections";
+
+  parseResponseSections(text).forEach((section) => {
+    const card = document.createElement("section");
+    card.className = `response-section ${section.title.toLowerCase().replace(/\s+/g, "-")}`;
+
+    const heading = document.createElement("h4");
+    heading.textContent = section.title;
+
+    const body = document.createElement("div");
+    body.className = "response-section-body";
+    body.textContent = section.body;
+
+    card.appendChild(heading);
+    card.appendChild(body);
+    wrapper.appendChild(card);
+  });
+
+  return wrapper;
 }
 
 function appendStructuredBotMessage(data, originalQuestion) {
@@ -49,13 +138,9 @@ function appendStructuredBotMessage(data, originalQuestion) {
   topic.className = "topic-line";
   topic.textContent = data.topic || "";
 
-  const answer = document.createElement("div");
-  answer.className = "answer-block";
-  answer.textContent = data.answer || "No answer available.";
-
   container.appendChild(subject);
   container.appendChild(topic);
-  container.appendChild(answer);
+  container.appendChild(renderEducationalResponse(data.answer));
   messagesDiv.appendChild(container);
 
   if (Array.isArray(data.followups) && data.followups.length > 0) {
@@ -188,6 +273,109 @@ async function fetchJson(url, options = {}) {
   return data;
 }
 
+function formatSkillLabel(value) {
+  if (!value) {
+    return "Not available";
+  }
+
+  return String(value)
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function normaliseStats(progress = {}, state = {}) {
+  const stateStats = state.stats || {};
+  const attempted = Number(
+    progress.attempted ?? stateStats.problems_attempted ?? 0,
+  );
+  const correct = Number(
+    progress.correct ?? stateStats.correct_answers ?? 0,
+  );
+  const accuracy = Number.isFinite(Number(progress.accuracy))
+    ? Number(progress.accuracy)
+    : attempted > 0
+      ? Math.round((correct / attempted) * 10000) / 100
+      : 0;
+
+  return {
+    questions: Number(
+      progress.questions_asked ?? stateStats.questions_asked ?? 0,
+    ),
+    attempted,
+    correct,
+    accuracy,
+  };
+}
+
+function findWeakestSkill(skills = {}) {
+  const entries = Object.entries(skills);
+  if (entries.length === 0) {
+    return "Not available";
+  }
+
+  const [skillName] = entries.reduce((weakest, current) => {
+    const weakestScore = Number(weakest[1]?.score ?? 0);
+    const currentScore = Number(current[1]?.score ?? 0);
+    return currentScore < weakestScore ? current : weakest;
+  });
+  return formatSkillLabel(skillName);
+}
+
+function setDashboardValue(key, value) {
+  if (dashboard[key]) {
+    dashboard[key].textContent = value;
+  }
+}
+
+function updateStudentDashboard({ progress = {}, skills = {}, state = {} }) {
+  const stats = normaliseStats(progress, state);
+  const stateSkills = state.skill_progression || skills;
+  const difficulty = state.difficulty_level ?? progress.difficulty_level;
+  const topic = state.current_topic ?? progress.current_topic;
+  const streak = state.correct_streak ?? progress.correct_streak;
+
+  setDashboardValue("questions", String(stats.questions));
+  setDashboardValue("attempted", String(stats.attempted));
+  setDashboardValue("correct", String(stats.correct));
+  setDashboardValue("accuracy", `${stats.accuracy}%`);
+  setDashboardValue(
+    "difficulty",
+    difficulty === undefined || difficulty === null
+      ? "Not available"
+      : `Level ${difficulty}`,
+  );
+  setDashboardValue("topic", formatSkillLabel(topic));
+  setDashboardValue("weakest", findWeakestSkill(stateSkills));
+  setDashboardValue(
+    "streak",
+    streak === undefined || streak === null ? "Not available" : String(streak),
+  );
+}
+
+async function loadStudentDashboard() {
+  try {
+    const state = await fetchJson("/learning-state");
+    updateStudentDashboard({ state });
+    return;
+  } catch (error) {
+    // Older deployments may not expose /learning-state yet. Fall back to the
+    // existing progress and skill endpoints without inventing missing fields.
+  }
+
+  try {
+    const [progress, skills] = await Promise.all([
+      fetchJson("/progress"),
+      fetchJson("/skills"),
+    ]);
+    updateStudentDashboard({ progress, skills });
+  } catch (error) {
+    setDashboardValue("topic", "Unable to load");
+    setDashboardValue("weakest", "Unable to load");
+  }
+}
+
 async function askQuestion() {
   const question = questionInput.value.trim();
   if (!question) {
@@ -225,6 +413,7 @@ async function askQuestionWithText(question, mode = "") {
 
     removeLoading();
     appendStructuredBotMessage(data, trimmedQuestion);
+    loadStudentDashboard();
   } catch (error) {
     removeLoading();
     appendMessage(error.message || "Unable to reach the backend.", "bot");
@@ -245,6 +434,7 @@ async function getPractice(level) {
     practiceProblemBox.textContent =
       `${data.difficulty} ${data.skill.replace(/_/g, " ")} problem:\n${data.problem}`;
     studentAnswerInput.value = "";
+    loadStudentDashboard();
   } catch (error) {
     practiceProblemBox.textContent = error.message || "Unable to load practice problem.";
   }
@@ -253,16 +443,16 @@ async function getPractice(level) {
 async function showProgress() {
   try {
     const data = await fetchJson("/progress");
-    appendMessage(
+    const summary =
       `Questions asked: ${data.questions_asked}\n` +
         `Problems attempted: ${data.attempted}\n` +
         `Correct answers: ${data.correct}\n` +
         `Accuracy: ${data.accuracy}%\n` +
-        `Lessons opened: ${data.lessons_completed}`,
-      "bot",
-    );
+        `Lessons opened: ${data.lessons_completed}`;
+    analyticsBox.textContent = summary;
+    loadStudentDashboard();
   } catch (error) {
-    appendMessage(error.message || "Unable to load progress.", "bot");
+    analyticsBox.textContent = error.message || "Unable to load progress.";
   }
 }
 
@@ -282,12 +472,13 @@ async function showSkills() {
   try {
     const data = await fetchJson("/skills");
     const lines = Object.entries(data).map(([skill, details]) => {
-      return `${skill}: ${details.score}/100 (${details.attempts} attempts)`;
+      return `${formatSkillLabel(skill)}: ${details.score}/100 (${details.attempts} attempts)`;
     });
 
-    appendMessage(lines.join("\n") || "No skill data available.", "bot");
+    feedbackBox.textContent = lines.join("\n") || "No skill data available.";
+    loadStudentDashboard();
   } catch (error) {
-    appendMessage(error.message || "Unable to load skills.", "bot");
+    feedbackBox.textContent = error.message || "Unable to load skills.";
   }
 }
 
@@ -314,6 +505,7 @@ async function submitAnswer() {
     });
 
     appendStructuredPracticeFeedback(data);
+    loadStudentDashboard();
   } catch (error) {
     appendMessage(error.message || "Unable to check answer.", "bot");
   }
@@ -330,10 +522,9 @@ function appendStructuredPracticeFeedback(data) {
     container.appendChild(badge);
   }
 
-  const answer = document.createElement("div");
-  answer.className = "answer-block";
-  answer.textContent = data.details || data.result || "No feedback available.";
-  container.appendChild(answer);
+  container.appendChild(renderEducationalResponse(
+    data.details || data.result || "No feedback available.",
+  ));
   messagesDiv.appendChild(container);
 
   const prompts = Array.isArray(data.next_steps) && data.next_steps.length > 0
@@ -358,6 +549,7 @@ async function getLesson(topic) {
   try {
     const data = await fetchJson(`/lesson/${topic}`);
     appendLessonMessage(data);
+    loadStudentDashboard();
   } catch (error) {
     appendMessage(error.message || "Unable to load lesson.", "bot");
   }
@@ -384,11 +576,16 @@ function renderLessonCatalog(lessons) {
     const actions = document.createElement("div");
     actions.className = "lesson-actions";
 
-    const learnButton = document.createElement("button");
+    const learnButton = document.createElement("a");
     learnButton.className = "primary-button";
-    learnButton.type = "button";
-    learnButton.textContent = `Learn ${lesson.button_label}`;
-    learnButton.addEventListener("click", () => getLesson(lesson.topic));
+    learnButton.href = `/lessons/${lesson.topic}`;
+    learnButton.textContent = `Open ${lesson.button_label}`;
+
+    const previewButton = document.createElement("button");
+    previewButton.className = "ghost-button";
+    previewButton.type = "button";
+    previewButton.textContent = "Preview";
+    previewButton.addEventListener("click", () => getLesson(lesson.topic));
 
     const promptButton = document.createElement("button");
     promptButton.className = "ghost-button";
@@ -397,6 +594,7 @@ function renderLessonCatalog(lessons) {
     promptButton.addEventListener("click", () => applySuggestion(lesson.starter_prompt));
 
     actions.appendChild(learnButton);
+    actions.appendChild(previewButton);
     actions.appendChild(promptButton);
 
     card.appendChild(meta);
@@ -425,6 +623,13 @@ function applySuggestion(text) {
   questionInput.focus();
 }
 
+function bindClick(id, handler) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.addEventListener("click", handler);
+  }
+}
+
 askButton.addEventListener("click", askQuestion);
 questionInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
@@ -433,14 +638,15 @@ questionInput.addEventListener("keydown", (event) => {
   }
 });
 
-document.getElementById("submit-answer").addEventListener("click", submitAnswer);
-document.getElementById("practice-easy").addEventListener("click", () => getPractice(1));
-document.getElementById("practice-medium").addEventListener("click", () => getPractice(2));
-document.getElementById("practice-hard").addEventListener("click", () => getPractice(3));
-document.getElementById("show-progress").addEventListener("click", showProgress);
-document.getElementById("show-skills").addEventListener("click", showSkills);
-document.getElementById("show-analytics").addEventListener("click", getAnalytics);
-document.getElementById("view-feedback").addEventListener("click", viewFeedback);
+bindClick("submit-answer", submitAnswer);
+bindClick("practice-easy", () => getPractice(1));
+bindClick("practice-medium", () => getPractice(2));
+bindClick("practice-hard", () => getPractice(3));
+bindClick("refresh-dashboard", loadStudentDashboard);
+bindClick("show-progress", showProgress);
+bindClick("show-skills", showSkills);
+bindClick("show-analytics", getAnalytics);
+bindClick("view-feedback", viewFeedback);
 lessonLibraryButton.addEventListener("click", () => {
   lessonGrid.scrollIntoView({ behavior: "smooth", block: "start" });
 });
@@ -450,3 +656,4 @@ document.querySelectorAll("[data-suggest]").forEach((button) => {
 });
 
 loadLessonCatalog();
+loadStudentDashboard();

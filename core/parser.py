@@ -1,5 +1,7 @@
 """Parsing and symbolic-normalisation helpers for mathematical input."""
 
+import re
+
 from sympy import simplify, symbols
 from sympy.parsing.sympy_parser import (
     convert_xor,
@@ -16,12 +18,39 @@ TRANSFORMATIONS = standard_transformations + (
     implicit_multiplication_application,
 )
 
+MATH_PARSE_ERROR_MESSAGE = (
+    "I could not read that algebra input. Check for a complete expression, "
+    "balanced brackets, no repeated operators, and exactly one equals sign "
+    "when using an equation."
+)
+UNSUPPORTED_MATH_OPERATION_MESSAGE = (
+    "This algebra workflow supports linear equations, quadratic equations, "
+    "factoring, simplifying expressions, simultaneous equations, hints, and "
+    "practice problems."
+)
+
+
+def has_obvious_malformed_math_input(text):
+    """Return True for common malformed input before symbolic parsing."""
+    cleaned = str(text or "").strip()
+    if not cleaned:
+        return True
+
+    return bool(
+        "++" in cleaned
+        or re.search(r"[+\-*/^]\s*(=|$)", cleaned)
+        or re.search(r"=\s*(=|$)", cleaned)
+    )
+
 
 def parse_math_expression(expr_str):
     """Parse a user-provided mathematical expression into a SymPy object."""
     expression = (expr_str or "").strip()
     if not expression:
         raise ValueError("Empty expression.")
+
+    if has_obvious_malformed_math_input(expression):
+        raise ValueError(MATH_PARSE_ERROR_MESSAGE)
 
     return parse_expr(
         expression,

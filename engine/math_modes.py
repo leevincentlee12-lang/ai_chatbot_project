@@ -6,7 +6,14 @@ import re
 from sympy import Poly, expand, factor as sympy_factor, simplify, solve
 
 from core.classifier import classify_algebra_intent
-from core.parser import _equation_to_expression, parse_math_expression, x, y
+from core.parser import (
+    MATH_PARSE_ERROR_MESSAGE,
+    _equation_to_expression,
+    has_obvious_malformed_math_input,
+    parse_math_expression,
+    x,
+    y,
+)
 from engine.algebra_solver import _parse_linear_equation, solve_value
 from utils.formatting import (
     _build_explanation,
@@ -48,6 +55,69 @@ def _extract_gradient(question):
                 continue
 
     return None
+
+
+def _strip_equation_prompt(question):
+    """Remove common natural-language wrappers around an equation."""
+    text = str(question or "").strip()
+    cleaned = re.sub(
+        r"(?i)^\s*(?:show(?:\s+me)?(?:\s+the)?(?:\s+full)?\s+working\s+for|"
+        r"show\s+working\s+for|give\s+me\s+a\s+hint\s+for|just\s+a\s+hint\s+for)\s*",
+        "",
+        text,
+    )
+    cleaned = re.sub(
+        r"(?i)^\s*(?:solve(?:\s+for\s+x)?|find\s+x(?:\s+(?:in|if|when))?|"
+        r"what\s+is\s+x(?:\s+(?:if|in|when))?|calculate\s+x(?:\s+(?:if|in|when))?|"
+        r"determine\s+x(?:\s+(?:if|in|when))?|work\s+out\s+x(?:\s+(?:if|in|when))?)"
+        r"\s*[:,-]?\s*",
+        "",
+        cleaned,
+    )
+    return cleaned.strip()
+
+
+def _is_linear_graph_form_question(question):
+    """Return whether text asks about the straight-line form y = mx + c."""
+    q_lower = str(question or "").lower()
+    return bool(
+        re.search(r"\by\s*=\s*m\s*x\s*[+\-]\s*c\b", q_lower)
+        or re.search(r"\by\s*=\s*mx\s*[+\-]\s*c\b", q_lower)
+        or re.search(r"\bmx\s*[+\-]\s*c\b", q_lower)
+    )
+
+
+def _answer_linear_graph_form_question(question, mode):
+    """Explain the straight-line equation form y = mx + c."""
+    if not _is_linear_graph_form_question(question):
+        return None
+
+    answer = (
+        "y = mx + c is the straight-line form. m is the gradient and c is "
+        "the y-intercept."
+    )
+
+    if mode == "direct":
+        return answer
+
+    if mode == "hint":
+        return "Look at the coefficient of x for the gradient, and the constant term for the y-intercept."
+
+    return _build_explanation(
+        answer=answer,
+        method=(
+            "1. y is the output value on the vertical axis.\n"
+            "2. x is the input value on the horizontal axis.\n"
+            "3. m tells you the gradient, or how steep the line is.\n"
+            "4. c tells you where the line crosses the y-axis."
+        ),
+        why=(
+            "This form is useful because it shows the two most important "
+            "features of a straight line directly: steepness and starting point."
+        ),
+        check="For y = 2x + 3, the gradient is 2 and the y-intercept is 3.",
+        next_step="Try identifying m and c in y = -3x + 5.",
+    )
 
 
 def _answer_gradient_question(question, mode):
@@ -224,7 +294,7 @@ def _answer_simplify_question(question, mode):
 
 def _answer_quadratic_question(question, mode):
     """Solve a quadratic equation in the requested experiment mode."""
-    equation = re.sub(r"(?i)^.*\bsolve\b\s*", "", str(question or "")).strip()
+    equation = _strip_equation_prompt(question)
 
     try:
         expr = _equation_to_expression(equation)
@@ -280,6 +350,94 @@ def _answer_quadratic_question(question, mode):
     )
 
 
+def _extract_discriminant_equation(question):
+    """Return the quadratic equation from a discriminant explanation prompt."""
+    text = str(question or "").strip()
+    if "discriminant" not in text.lower():
+        return None
+
+    cleaned = re.sub(
+        r"(?i)^\s*(?:explain|find|calculate|work\s+out|what\s+is)\s+"
+        r"(?:the\s+)?discriminant\s+(?:in|of|for)\s*",
+        "",
+        text,
+    ).strip()
+    cleaned = re.sub(
+        r"(?i)^\s*(?:the\s+)?discriminant\s+(?:in|of|for)\s*",
+        "",
+        cleaned,
+    ).strip()
+    cleaned = cleaned.rstrip("?.")
+
+    if not cleaned or cleaned == text:
+        return None
+    return cleaned
+
+
+def _describe_discriminant(discriminant):
+    """Return a short interpretation of a numeric quadratic discriminant."""
+    try:
+        if discriminant > 0:
+            return "positive, so the quadratic has two distinct real roots"
+        if discriminant == 0:
+            return "zero, so the quadratic has one repeated real root"
+        if discriminant < 0:
+            return "negative, so the quadratic has no real roots"
+    except TypeError:
+        pass
+    return "used to determine how many real roots the quadratic has"
+
+
+def _answer_discriminant_question(question, mode):
+    """Explain the discriminant for a quadratic equation."""
+    if "discriminant" not in str(question or "").lower():
+        return None
+
+    equation = _extract_discriminant_equation(question)
+    if not equation:
+        return "Provide a quadratic equation so I can calculate its discriminant."
+
+    try:
+        expr = _equation_to_expression(equation)
+        poly = Poly(expr, x)
+    except Exception:
+        return MATH_PARSE_ERROR_MESSAGE
+
+    if poly.degree() != 2:
+        return "The discriminant applies to quadratic equations in the form ax^2 + bx + c = 0."
+
+    a_coeff, b_coeff, c_coeff = poly.all_coeffs()
+    discriminant = simplify(b_coeff**2 - 4 * a_coeff * c_coeff)
+    meaning = _describe_discriminant(discriminant)
+    answer = f"The discriminant is {_format_expression(discriminant)}, which is {meaning}."
+
+    if mode == "direct":
+        return answer
+
+    if mode == "hint":
+        return (
+            "Write the equation as ax^2 + bx + c = 0, identify a, b, and c, "
+            "then calculate b^2 - 4ac."
+        )
+
+    return _build_explanation(
+        answer=answer,
+        method=(
+            f"1. Write the equation in standard form: {_format_expression(expr)} = 0.\n"
+            f"2. Identify a = {_format_expression(a_coeff)}, "
+            f"b = {_format_expression(b_coeff)}, c = {_format_expression(c_coeff)}.\n"
+            f"3. Calculate D = b^2 - 4ac = {_format_expression(discriminant)}."
+        ),
+        why=(
+            "The discriminant tells you the type of roots before solving the "
+            "whole quadratic: positive means two real roots, zero means one "
+            "repeated real root, and negative means no real roots."
+        ),
+        check="The sign of the discriminant should match the number of real roots you get by factoring or using the quadratic formula.",
+        next_step="Now solve the quadratic by factoring or the quadratic formula and compare the roots with the discriminant result.",
+    )
+
+
 def _answer_simultaneous_question(question, mode):
     """Solve a simultaneous-equations prompt in the requested experiment mode."""
     q = (question or "").strip()
@@ -331,7 +489,7 @@ def _answer_simultaneous_question(question, mode):
 
 def _answer_linear_question(question, mode):
     """Solve a linear equation in the requested experiment mode."""
-    equation = re.sub(r"(?i)^.*\bsolve\b\s*", "", str(question or "")).strip()
+    equation = _strip_equation_prompt(question)
     analysis = _parse_linear_equation(equation)
 
     if analysis is None:
@@ -376,7 +534,7 @@ def _answer_linear_question(question, mode):
 
 def _answer_symbolic_equation(question, mode):
     """Solve a supported equation symbolically in the requested experiment mode."""
-    equation = re.sub(r"(?i)^.*\bsolve\b\s*", "", str(question or "")).strip()
+    equation = _strip_equation_prompt(question)
     value = solve_value(equation)
     if value is None:
         return None
@@ -492,6 +650,9 @@ def _answer_trig_question(question, mode):
 
 def answer_experiment_algebra_question(question, mode):
     """Answer an algebra-scoped experiment question in the selected mode."""
+    if has_obvious_malformed_math_input(question):
+        return MATH_PARSE_ERROR_MESSAGE
+
     intent = classify_algebra_intent(question)
     intent_handlers = {
         "factoring": _answer_factor_question,
@@ -501,6 +662,9 @@ def answer_experiment_algebra_question(question, mode):
         "ratio": _answer_ratio_question,
         "simultaneous_equations": _answer_simultaneous_question,
         "simultaneous": _answer_simultaneous_question,
+        "linear_graph_form": _answer_linear_graph_form_question,
+        "gradient": _answer_gradient_question,
+        "explain_discriminant": _answer_discriminant_question,
         "quadratic_equation": _answer_quadratic_question,
         "linear_equation": _answer_linear_question,
     }
@@ -510,6 +674,10 @@ def answer_experiment_algebra_question(question, mode):
         response = handler(question, mode)
         if response:
             return response
+
+    response = _answer_linear_graph_form_question(question, mode)
+    if response:
+        return response
 
     if _is_gradient_question(question):
         response = _answer_gradient_question(question, mode)
@@ -522,6 +690,8 @@ def answer_experiment_algebra_question(question, mode):
         _answer_expand_question,
         _answer_simplify_question,
         _answer_simultaneous_question,
+        _answer_linear_graph_form_question,
+        _answer_discriminant_question,
         _answer_quadratic_question,
         _answer_linear_question,
         _answer_trig_question,

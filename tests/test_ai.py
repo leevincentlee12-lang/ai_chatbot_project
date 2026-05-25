@@ -3,9 +3,11 @@ import unittest
 from app import app
 from homework_helper import (
     answer_question,
+    classify_math_request,
     evaluate_answer_details,
     factor_expression,
     generate_lesson,
+    handle_math,
     list_lessons,
     validate_steps,
 )
@@ -41,6 +43,22 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertIn("skill", payload)
         self.assertNotIn("solution", payload)
 
+    def test_learning_state_remembers_active_practice_problem(self):
+        response = self.client.get("/practice/2")
+        self.assertEqual(response.status_code, 200)
+        problem_payload = response.get_json()
+
+        state_response = self.client.get("/learning-state")
+        self.assertEqual(state_response.status_code, 200)
+        state = state_response.get_json()
+
+        active_problem = state["active_practice_problem"]
+        self.assertEqual(active_problem["problem"], problem_payload["problem"])
+        self.assertEqual(active_problem["skill"], problem_payload["skill"])
+        self.assertEqual(active_problem["difficulty"], problem_payload["difficulty"])
+        self.assertEqual(active_problem["level"], 2)
+        self.assertNotIn("solution", active_problem)
+
     def test_check_answer_accepts_assignment_format(self):
         response = self.client.post(
             "/check-answer",
@@ -62,6 +80,101 @@ class HomeworkHelperAppTests(unittest.TestCase):
     def test_factoring_returns_factored_form(self):
         result = factor_expression("x^2 - 9")
         self.assertIn("(x - 3)*(x + 3)", result)
+
+    def test_math_workflow_intent_dispatch_labels_core_requests(self):
+        examples = {
+            "solve 2x + 4 = 10": "solve_linear",
+            "solve x^2 - 9 = 0": "solve_quadratic",
+            "explain the discriminant in x^2 - 4x + 3 = 0": "explain_discriminant",
+            "explain y = mx + c": "linear_graph_form",
+            "factor x^2 - 9": "factor_expression",
+            "simplify 2x + 3x - 4": "simplify_expression",
+            "solve x+y=5 and x-y=1": "solve_simultaneous",
+            "validate steps": "validate_steps",
+            "practice problem": "generate_problem",
+        }
+
+        for question, expected_intent in examples.items():
+            with self.subTest(question=question):
+                match = classify_math_request(question)
+                self.assertEqual(match.name, expected_intent)
+                self.assertGreater(match.confidence, 0)
+
+    def test_handle_math_simplifies_expression_through_intent_dispatch(self):
+        result = handle_math("simplify 2x + 3x - 4")
+        self.assertIn("Answer", result)
+        self.assertIn("5*x - 4", result)
+
+    def test_handle_math_solves_simultaneous_prompt_with_solve_prefix(self):
+        result = handle_math("solve x+y=5 and x-y=1")
+        self.assertIn("x = 3", result)
+        self.assertIn("y = 2", result)
+
+    def test_malformed_linear_equation_is_not_solved(self):
+        result = handle_math("solve 2x + = 10")
+        self.assertIn("could not read", result)
+        self.assertNotIn("x = 5", result)
+
+    def test_repeated_operator_equation_is_rejected_cleanly(self):
+        result = handle_math("solve 2x ++ 4 = 10")
+        self.assertIn("could not read", result)
+        self.assertNotIn("x = 3", result)
+
+    def test_explicit_multiplication_still_solves_via_symbolic_fallback(self):
+        result = handle_math("solve 2*x + 4 = 10")
+        self.assertIn("x = 3", result)
+
+    def test_discriminant_explanation_works_in_main_answer_path(self):
+        result = answer_question(
+            "explain the discriminant in x^2 - 4x + 3 = 0",
+            mode="step-by-step",
+        )
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Quadratic Equations")
+        self.assertIn("The discriminant is 4", result["answer"])
+        self.assertIn("b^2 - 4ac", result["answer"])
+        self.assertNotIn("Provide an algebra equation", result["answer"])
+
+    def test_linear_graph_form_explanation_works_in_main_answer_path(self):
+        result = answer_question("explain y = mx + c", mode="step-by-step")
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Linear Graphs")
+        self.assertIn("m is the gradient", result["answer"])
+        self.assertIn("c is the y-intercept", result["answer"])
+        self.assertNotIn("Provide an algebra equation", result["answer"])
+
+    def test_worded_linear_equation_prompts_extract_equation(self):
+        examples = {
+            "find x in 4x - 9 = 3": "x = 3",
+            "what is x if 3x = 12": "x = 4",
+            "solve for x: 2x + 4 = 10": "x = 3",
+        }
+
+        for question, expected in examples.items():
+            with self.subTest(question=question):
+                result = answer_question(question, mode="direct")
+                self.assertEqual(result["subject"], "Math")
+                self.assertEqual(result["answer"], expected)
+
+    def test_malformed_step_validation_returns_educational_error(self):
+        result = validate_steps([
+            "2x + = 10",
+            "x = 5",
+        ])
+        self.assertIn("Step 1 could not be read", result)
+        self.assertIn("complete expression", result)
+
+    def test_malformed_check_answer_request_returns_clean_error(self):
+        payload = evaluate_answer_details("2x + = 10", "x = 5")
+        self.assertEqual(payload["status"], "error")
+        self.assertEqual(payload["headline"], "Invalid Equation")
+        self.assertIn("could not read", payload["details"])
+
+    def test_main_answer_route_returns_clean_error_for_malformed_equation(self):
+        result = answer_question("solve 2x + = 10", mode="direct")
+        self.assertEqual(result["subject"], "Math")
+        self.assertIn("could not read", result["answer"])
+        self.assertNotIn("x = 5", result["answer"])
 
     def test_answer_question_restricts_non_algebra_scope(self):
         result = answer_question("what caused WW2", mode="direct")
@@ -110,6 +223,46 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertIn("lessons", payload)
         self.assertTrue(any(lesson["topic"] == "trigonometry" for lesson in payload["lessons"]))
 
+    def test_lesson_page_renders_dynamic_lesson_sections(self):
+        response = self.client.get("/lessons/trigonometry")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("Right-Angle Trigonometry", html)
+        self.assertIn("Core Idea", html)
+        self.assertIn("Key Points", html)
+        self.assertIn("Worked Example", html)
+        self.assertIn("Common Mistakes", html)
+        self.assertIn("Practice Prompts", html)
+        self.assertIn("find x if sin 35 = x/12", html)
+
+    def test_learning_state_remembers_current_lesson(self):
+        response = self.client.get("/lesson/trigonometry")
+        self.assertEqual(response.status_code, 200)
+        lesson_payload = response.get_json()
+
+        state_response = self.client.get("/learning-state")
+        self.assertEqual(state_response.status_code, 200)
+        state = state_response.get_json()
+
+        current_lesson = state["current_lesson"]
+        self.assertEqual(current_lesson["topic"], lesson_payload["topic"])
+        self.assertEqual(current_lesson["title"], "Right-Angle Trigonometry")
+        self.assertIn("summary", current_lesson)
+
+    def test_learning_state_exposes_recent_question_alias(self):
+        response = self.client.post(
+            "/ask",
+            json={"question": "solve 2x + 4 = 10", "mode": "direct"},
+        )
+        self.assertEqual(response.status_code, 200)
+
+        state_response = self.client.get("/learning-state")
+        self.assertEqual(state_response.status_code, 200)
+        state = state_response.get_json()
+
+        self.assertEqual(state["recent_question"]["question"], "solve 2x + 4 = 10")
+        self.assertTrue(state["recent_questions"])
+
     def test_ratio_question_is_supported(self):
         result = answer_question("simplify the ratio 6:9", mode="step-by-step")
         self.assertEqual(result["topic"], "Ratios")
@@ -123,6 +276,43 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.get_json()
         self.assertEqual(payload["answer"], "x = 3")
+
+    def test_practice_mode_page_loads(self):
+        response = self.client.get("/practice")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("Practice Mode", html)
+        self.assertIn("practiceModeAnswer", html)
+        self.assertIn("practice.js", html)
+
+    def test_progress_page_loads(self):
+        response = self.client.get("/progress-page")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("Student performance", html)
+        self.assertIn("progressAccuracy", html)
+        self.assertIn("skillScoreList", html)
+        self.assertIn("recentActivityList", html)
+        self.assertIn("progress.js", html)
+
+    def test_about_page_loads_with_project_details(self):
+        response = self.client.get("/about")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("Project Overview", html)
+        self.assertIn("Technologies Used", html)
+        self.assertIn("System Architecture", html)
+        self.assertIn("User Input", html)
+        self.assertIn("Subject Engine", html)
+        self.assertIn("Feedback Generator", html)
+        self.assertIn("Progress Tracking", html)
+        self.assertIn("Deployment Details", html)
+        self.assertIn("Future Improvements", html)
+
+    def test_legacy_learn_route_still_loads_about_page(self):
+        response = self.client.get("/learn")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Project Overview", response.get_data(as_text=True))
 
 
 if __name__ == "__main__":
