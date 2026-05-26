@@ -1,4 +1,5 @@
 {
+  "public_form_url": "https://docs.google.com/forms/d/e/FORM_ID/viewform",
   "form_url": "https://docs.google.com/forms/d/e/FORM_ID/formResponse",
   "mappings": {
     "question": "entry.1111111111",

@@ -111,6 +111,29 @@ def _load_feedback_config():
     return result
 
 
+def _public_feedback_form_url(url):
+    """Return a browser-openable Google Form URL from a configured form URL."""
+    text = str(url or "").strip()
+    if not text:
+        return ""
+    return text.replace("/formResponse", "/viewform")
+
+
+def _feedback_form_url():
+    """Return the optional external feedback form URL for the homepage."""
+    env_url = os.environ.get("FEEDBACK_FORM_URL", "").strip()
+    if env_url:
+        return _public_feedback_form_url(env_url)
+
+    cfg = _load_feedback_config()
+    if not cfg:
+        return ""
+
+    return _public_feedback_form_url(
+        cfg.get("public_form_url") or cfg.get("form_url")
+    )
+
+
 def _forward_feedback_to_google(record):
     cfg = _load_feedback_config()
     if not cfg:
@@ -166,7 +189,10 @@ def handle_exception(error):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+        feedback_form_url=_feedback_form_url(),
+    )
 
 
 @app.route("/about")

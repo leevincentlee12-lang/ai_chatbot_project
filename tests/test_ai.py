@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from app import app
 from homework_helper import (
@@ -276,6 +277,18 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.get_json()
         self.assertEqual(payload["answer"], "x = 3")
+
+    def test_homepage_shows_external_feedback_form_link_when_configured(self):
+        with patch.dict(
+            "os.environ",
+            {"FEEDBACK_FORM_URL": "https://docs.google.com/forms/d/e/example/formResponse"},
+        ):
+            response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("Open Feedback Form", html)
+        self.assertIn("https://docs.google.com/forms/d/e/example/viewform", html)
 
     def test_practice_mode_page_loads(self):
         response = self.client.get("/practice")
