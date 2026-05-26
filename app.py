@@ -174,6 +174,12 @@ def _forward_feedback_to_google(record):
         return False
 
 
+@app.context_processor
+def inject_feedback_form_url():
+    """Expose the optional feedback form link to all templates."""
+    return {"feedback_form_url": _feedback_form_url()}
+
+
 @app.errorhandler(Exception)
 def handle_exception(error):
     print("SERVER ERROR:")
@@ -189,10 +195,7 @@ def handle_exception(error):
 
 @app.route("/")
 def index():
-    return render_template(
-        "index.html",
-        feedback_form_url=_feedback_form_url(),
-    )
+    return render_template("index.html")
 
 
 @app.route("/about")

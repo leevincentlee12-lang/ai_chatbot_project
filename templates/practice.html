@@ -18,6 +18,9 @@
           <a href="/practice">Practice</a>
           <a href="/progress-page">Progress</a>
           <a href="/about">About</a>
+          {% if feedback_form_url %}
+          <a href="{{ feedback_form_url }}" target="_blank" rel="noopener">Feedback</a>
+          {% endif %}
         </div>
       </nav>
 

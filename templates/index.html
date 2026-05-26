@@ -18,6 +18,9 @@
           <a href="/practice">Practice</a>
           <a href="/progress-page">Progress</a>
           <a href="/about">About</a>
+          {% if feedback_form_url %}
+          <a href="{{ feedback_form_url }}" target="_blank" rel="noopener">Feedback</a>
+          {% endif %}
         </div>
       </nav>
 
@@ -162,9 +165,6 @@
             <button class="ghost-button" type="button" id="show-skills">Skill Mastery</button>
             <button class="ghost-button" type="button" id="show-analytics">Learning Analytics</button>
             <button class="ghost-button" type="button" id="view-feedback">Feedback Overview</button>
-            {% if feedback_form_url %}
-            <a class="ghost-button" href="{{ feedback_form_url }}" target="_blank" rel="noopener">Open Feedback Form</a>
-            {% endif %}
           </div>
 
           <div class="data-grid">

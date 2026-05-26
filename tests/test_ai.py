@@ -287,7 +287,19 @@ class HomeworkHelperAppTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
-        self.assertIn("Open Feedback Form", html)
+        self.assertIn(">Feedback</a>", html)
+        self.assertIn("https://docs.google.com/forms/d/e/example/viewform", html)
+
+    def test_feedback_form_link_is_available_in_secondary_page_nav(self):
+        with patch.dict(
+            "os.environ",
+            {"FEEDBACK_FORM_URL": "https://docs.google.com/forms/d/e/example/viewform"},
+        ):
+            response = self.client.get("/practice")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn(">Feedback</a>", html)
         self.assertIn("https://docs.google.com/forms/d/e/example/viewform", html)
 
     def test_practice_mode_page_loads(self):
