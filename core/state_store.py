@@ -29,6 +29,7 @@ DEFAULT_SKILLS = {
     "factoring": {"score": 0, "attempts": 0},
     "fractions": {"score": 0, "attempts": 0},
     "indices": {"score": 0, "attempts": 0},
+    "rational_equations": {"score": 0, "attempts": 0},
 }
 
 BASE_DIR = Path(__file__).resolve().parents[1]

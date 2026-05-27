@@ -159,6 +159,9 @@ def detect_math_skill(question):
     if "x^2" in q_lower or "quadratic" in q_lower:
         return "quadratics"
 
+    if "/" in q_lower and "x" in q_lower:
+        return "rational_equations"
+
     if "factor" in q_lower:
         return "factoring"
 
@@ -400,6 +403,22 @@ def _format_quadratic_expression(b_coefficient, constant):
     return expression
 
 
+def _format_quadratic_expression_with_a(a_coefficient, b_coefficient, constant):
+    """Format ax^2 + bx + c in readable school notation."""
+    if a_coefficient == 1:
+        expression = "x^2"
+    elif a_coefficient == -1:
+        expression = "-x^2"
+    else:
+        expression = f"{a_coefficient}x^2"
+
+    if b_coefficient:
+        expression += _signed_term(b_coefficient, "x")
+    if constant:
+        expression += _signed_term(constant, "")
+    return expression
+
+
 def _generate_quadratic_problem(ranges):
     """Generate a factorable quadratic with two integer roots."""
     root_a = _random_nonzero(*ranges["x_range"])
@@ -414,6 +433,88 @@ def _generate_quadratic_problem(ranges):
         "skill": "quadratics",
         "problem": f"{_format_quadratic_expression(b_coefficient, constant)} = 0",
         "solution": sorted([root_a, root_b]),
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_fractional_linear_problem(ranges):
+    """Generate a linear equation with algebraic fractions and an integer root."""
+    solution = random.randint(*ranges["x_range"])
+    first_denominator = random.randint(2, 5)
+    second_denominator = random.randint(3, 7)
+    first_coefficient = _random_nonzero(-9, 9)
+    second_coefficient = _random_nonzero(-9, 9)
+    while (
+        first_coefficient * second_denominator
+        + second_coefficient * first_denominator
+    ) == 0:
+        second_coefficient = _random_nonzero(-9, 9)
+    first_value = _random_nonzero(-8, 8)
+    second_value = _random_nonzero(-8, 8)
+
+    first_constant = first_denominator * first_value - first_coefficient * solution
+    second_constant = second_denominator * second_value - second_coefficient * solution
+    right_value = first_value + second_value
+
+    first_numerator = _format_linear_side(first_coefficient, first_constant)
+    second_numerator = _format_linear_side(second_coefficient, second_constant)
+
+    return {
+        "skill": "linear_equations",
+        "problem": (
+            f"({first_numerator})/{first_denominator} + "
+            f"({second_numerator})/{second_denominator} = {right_value}"
+        ),
+        "solution": solution,
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_non_monic_quadratic_problem(ranges):
+    """Generate ax^2 + bx + c = 0 where a is not 1."""
+    a_factor = random.randint(2, 5)
+    first_factor_root = _random_nonzero(-8, 8)
+    second_factor_root = first_factor_root
+    while (
+        second_factor_root == first_factor_root
+        or abs((first_factor_root / a_factor) - second_factor_root) < 1e-9
+    ):
+        second_factor_root = _random_nonzero(-8, 8)
+
+    # (a_factor*x - first_factor_root)(x - second_factor_root) = 0
+    a_coefficient = a_factor
+    b_coefficient = -(a_factor * second_factor_root + first_factor_root)
+    constant = first_factor_root * second_factor_root
+    roots = sorted([first_factor_root / a_factor, second_factor_root])
+
+    return {
+        "skill": "quadratics",
+        "problem": (
+            f"{_format_quadratic_expression_with_a(a_coefficient, b_coefficient, constant)} = 0"
+        ),
+        "solution": roots,
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_rational_equation_problem(ranges):
+    """Generate a rational equation with one valid numeric solution."""
+    solution = _random_nonzero(-9, 9)
+    excluded_value = solution
+    while excluded_value == solution:
+        excluded_value = _random_nonzero(-6, 6)
+
+    ratio_value = random.randint(2, 6)
+    x_coefficient = ratio_value
+    while x_coefficient == ratio_value:
+        x_coefficient = random.randint(2, 8)
+    constant = ratio_value * (solution - excluded_value) - x_coefficient * solution
+    numerator = _format_linear_side(x_coefficient, constant)
+
+    return {
+        "skill": "rational_equations",
+        "problem": f"({numerator})/(x{_signed_number(-excluded_value)}) = {ratio_value}",
+        "solution": solution,
         "difficulty": ranges["label"],
     }
 
@@ -436,9 +537,9 @@ def generate_problem(level=None, user_id=None):
         problem_data = generator(ranges)
     else:
         generator = random.choice((
-            _generate_two_sided_linear_problem,
-            _generate_parentheses_linear_problem,
-            _generate_quadratic_problem,
+            _generate_fractional_linear_problem,
+            _generate_non_monic_quadratic_problem,
+            _generate_rational_equation_problem,
         ))
         problem_data = generator(ranges)
 

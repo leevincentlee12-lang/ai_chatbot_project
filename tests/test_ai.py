@@ -11,6 +11,7 @@ from homework_helper import (
     generate_lesson,
     handle_math,
     list_lessons,
+    solve_values,
     validate_steps,
 )
 
@@ -46,13 +47,67 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertNotIn("solution", payload)
 
     def test_hard_practice_can_generate_factorable_quadratics(self):
-        with patch("core.progression.random.choice", side_effect=lambda options: options[-1]):
+        def choose_non_monic(options):
+            return next(
+                option
+                for option in options
+                if option.__name__ == "_generate_non_monic_quadratic_problem"
+            )
+
+        with patch("core.progression.random.choice", side_effect=choose_non_monic):
             problem = generate_problem(level=3, user_id="hard-practice-test")
 
         self.assertEqual(problem["difficulty"], "Hard")
         self.assertEqual(problem["skill"], "quadratics")
         self.assertIn("x^2", problem["problem"])
+        self.assertRegex(problem["problem"], r"\d+x\^2")
         self.assertEqual(len(problem["solution"]), 2)
+
+    def test_hard_practice_generates_fractional_linear_problem(self):
+        def choose_fractional(options):
+            return next(
+                option
+                for option in options
+                if option.__name__ == "_generate_fractional_linear_problem"
+            )
+
+        with patch("core.progression.random.choice", side_effect=choose_fractional):
+            problem = generate_problem(level=3, user_id="hard-fraction-test")
+
+        self.assertEqual(problem["difficulty"], "Hard")
+        self.assertEqual(problem["skill"], "linear_equations")
+        self.assertIn("/", problem["problem"])
+        self.assertEqual(len(solve_values(problem["problem"])), 1)
+
+        payload = evaluate_answer_details(problem["problem"], f"x = {problem['solution']}")
+        self.assertEqual(payload["status"], "correct")
+
+    def test_hard_practice_generates_rational_equation_problem(self):
+        def choose_rational(options):
+            return next(
+                option
+                for option in options
+                if option.__name__ == "_generate_rational_equation_problem"
+            )
+
+        with patch("core.progression.random.choice", side_effect=choose_rational):
+            problem = generate_problem(level=3, user_id="hard-rational-test")
+
+        self.assertEqual(problem["difficulty"], "Hard")
+        self.assertEqual(problem["skill"], "rational_equations")
+        self.assertIn("/(x", problem["problem"])
+        self.assertEqual(len(solve_values(problem["problem"])), 1)
+
+        payload = evaluate_answer_details(problem["problem"], f"x = {problem['solution']}")
+        self.assertEqual(payload["status"], "correct")
+
+    def test_hard_practice_no_longer_uses_plain_two_sided_linear_template(self):
+        for _ in range(20):
+            problem = generate_problem(level=3, user_id="hard-template-test")
+            self.assertTrue(
+                "/" in problem["problem"] or "x^2" in problem["problem"],
+                problem["problem"],
+            )
 
     def test_quadratic_practice_accepts_complete_solution_set(self):
         payload = evaluate_answer_details("x^2 - 5x + 6 = 0", "x = 2 or x = 3")
@@ -242,12 +297,42 @@ class HomeworkHelperAppTests(unittest.TestCase):
         lessons = list_lessons()
         self.assertTrue(any(lesson["topic"] == "trigonometry" for lesson in lessons))
 
+    def test_lesson_catalog_includes_senior_extension_topics(self):
+        topics = {lesson["topic"] for lesson in list_lessons()}
+        expected_topics = {
+            "algebra_functions",
+            "senior_coordinate_geometry",
+            "advanced_trigonometry",
+            "exponential_logarithmic_functions",
+            "calculus_intro",
+            "statistics_probability",
+        }
+        self.assertTrue(expected_topics.issubset(topics))
+
     def test_generate_lesson_returns_rich_payload(self):
         lesson = generate_lesson("trigonometry")
         self.assertEqual(lesson["title"], "Right-Angle Trigonometry")
         self.assertTrue(len(lesson["common_mistakes"]) >= 2)
         self.assertTrue(len(lesson["practice_prompts"]) >= 2)
         self.assertIn("Worked Example", lesson["display_text"])
+
+    def test_generate_senior_calculus_lesson_returns_dynamic_payload(self):
+        lesson = generate_lesson("calculus_intro")
+        self.assertEqual(lesson["title"], "Introduction to Calculus")
+        self.assertEqual(lesson["level"], "Year 11")
+        self.assertIn("derivative", lesson["explanation"])
+        self.assertIn("3x^2 + 2", lesson["example"])
+        self.assertTrue(all(
+            prompt.startswith(("learn", "study", "revise"))
+            for prompt in lesson["practice_prompts"]
+        ))
+
+    def test_senior_extension_lesson_request_routes_safely(self):
+        result = answer_question("learn introduction to calculus", mode="direct")
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Introduction to Calculus")
+        self.assertIn("Introduction to Calculus", result["answer"])
+        self.assertIn("Practice Prompts", result["answer"])
 
     def test_lessons_endpoint_returns_catalog(self):
         response = self.client.get("/lessons")
@@ -352,6 +437,7 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertIn("Practice Mode", html)
         self.assertIn("practiceModeAnswer", html)
         self.assertIn("x = 3 or x = -2", html)
+        self.assertIn("rational equations", html)
         self.assertIn("practice.js", html)
 
     def test_progress_page_loads(self):

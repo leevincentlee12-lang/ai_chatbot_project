@@ -25,6 +25,26 @@ SUBJECT_KEYWORDS = {
         "graph",
         "coordinate",
         "probability",
+        "function",
+        "polynomial",
+        "piecewise",
+        "absolute value",
+        "transformation",
+        "circle",
+        "radian",
+        "identity",
+        "exponential",
+        "logarithm",
+        "logarithmic",
+        "calculus",
+        "limit",
+        "derivative",
+        "differentiate",
+        "rate of change",
+        "statistics",
+        "random variable",
+        "variance",
+        "standard deviation",
     ],
     "Science": [
         "force",
@@ -388,6 +408,258 @@ LESSON_CATALOG = {
         "starter_prompt": "find the midpoint of (2, 5) and (6, 9)",
         "related_topics": ["linear_graphs", "trigonometry"],
         "keywords": ["coordinate geometry", "midpoint", "distance formula"],
+    },
+    "algebra_functions": {
+        "title": "Algebra and Functions",
+        "button_label": "Algebra and Functions",
+        "strand": "Senior Mathematics",
+        "level": "Years 10-11",
+        "summary": "Extend algebra into polynomials, piecewise rules, absolute values, and graph transformations.",
+        "explanation": (
+            "A function connects each input to an output. Senior algebra focuses "
+            "on how different rules change the shape, domain, intercepts, and "
+            "turning points of a graph."
+        ),
+        "key_points": [
+            "Use function notation such as f(x) to describe input-output rules.",
+            "Transformations like f(x) + k, f(x - h), and -f(x) move or reflect graphs.",
+            "Piecewise functions use different rules on different parts of the domain.",
+        ],
+        "example": (
+            "For f(x) = |x - 2| + 1\n"
+            "Start with y = |x|\n"
+            "x - 2 shifts the graph 2 units right\n"
+            "+ 1 shifts the graph 1 unit up\n"
+            "The vertex is (2, 1)"
+        ),
+        "common_mistakes": [
+            "Moving a graph left when the expression x - h actually shifts it right.",
+            "Ignoring domain restrictions in piecewise functions.",
+            "Treating f(x) as multiplication instead of function notation.",
+        ],
+        "practice_prompts": [
+            "learn algebra and functions",
+            "revise graph transformations",
+            "study piecewise functions",
+        ],
+        "starter_prompt": "learn algebra and functions",
+        "related_topics": ["quadratics", "linear_graphs", "exponential_logarithmic_functions"],
+        "keywords": [
+            "algebra and functions",
+            "functions",
+            "polynomials",
+            "piecewise",
+            "absolute value",
+            "graph transformations",
+        ],
+    },
+    "senior_coordinate_geometry": {
+        "title": "Senior Coordinate Geometry",
+        "button_label": "Senior Coordinate Geometry",
+        "strand": "Senior Mathematics",
+        "level": "Years 10-11",
+        "summary": "Use point-gradient form, equations of lines, and circle equations on the Cartesian plane.",
+        "explanation": (
+            "Coordinate geometry translates geometric relationships into algebraic "
+            "equations, so lines, circles, distances, and gradients can be solved systematically."
+        ),
+        "key_points": [
+            "Point-gradient form is y - y1 = m(x - x1).",
+            "A circle with centre (a, b) and radius r has equation (x - a)^2 + (y - b)^2 = r^2.",
+            "Perpendicular lines have gradients whose product is -1.",
+        ],
+        "example": (
+            "Find the line through (2, 5) with gradient 3\n"
+            "Use y - y1 = m(x - x1)\n"
+            "y - 5 = 3(x - 2)\n"
+            "y = 3x - 1"
+        ),
+        "common_mistakes": [
+            "Substituting the point into point-gradient form in the wrong order.",
+            "Forgetting to square the radius in a circle equation.",
+            "Using the same gradient for perpendicular lines instead of the negative reciprocal.",
+        ],
+        "practice_prompts": [
+            "learn senior coordinate geometry",
+            "revise circle equations",
+            "study point gradient form",
+        ],
+        "starter_prompt": "learn senior coordinate geometry",
+        "related_topics": ["coordinate_geometry", "linear_graphs", "algebra_functions"],
+        "keywords": [
+            "senior coordinate geometry",
+            "point gradient",
+            "point-gradient",
+            "circle equation",
+            "equation of a line",
+        ],
+    },
+    "advanced_trigonometry": {
+        "title": "Advanced Trigonometry",
+        "button_label": "Advanced Trigonometry",
+        "strand": "Senior Mathematics",
+        "level": "Years 10-11",
+        "summary": "Move beyond right triangles into radian measure, identities, and trigonometric equations.",
+        "explanation": (
+            "Advanced trigonometry treats sine, cosine, and tangent as functions. "
+            "Radians connect angle size directly to arc length, and identities help "
+            "rewrite expressions into equivalent forms."
+        ),
+        "key_points": [
+            "pi radians equals 180 degrees.",
+            "The identity sin^2(x) + cos^2(x) = 1 is central.",
+            "Trigonometric equations often have multiple solutions over a given interval.",
+        ],
+        "example": (
+            "Convert 60 degrees to radians\n"
+            "60 degrees x pi/180 = pi/3 radians"
+        ),
+        "common_mistakes": [
+            "Mixing degrees and radians in the same calculation.",
+            "Finding only one solution to a trigonometric equation over an interval.",
+            "Using an identity in only one direction without checking equivalence.",
+        ],
+        "practice_prompts": [
+            "learn advanced trigonometry",
+            "revise radian measure",
+            "study trigonometric identities",
+        ],
+        "starter_prompt": "learn advanced trigonometry",
+        "related_topics": ["trigonometry", "algebra_functions", "calculus_intro"],
+        "keywords": [
+            "advanced trigonometry",
+            "radians",
+            "radian measure",
+            "trigonometric identities",
+            "trig equations",
+        ],
+    },
+    "exponential_logarithmic_functions": {
+        "title": "Exponential and Logarithmic Functions",
+        "button_label": "Exponentials and Logarithms",
+        "strand": "Senior Mathematics",
+        "level": "Years 10-11",
+        "summary": "Model growth and decay using exponential functions and their logarithmic inverses.",
+        "explanation": (
+            "Exponential functions model repeated multiplication, while logarithms "
+            "answer the inverse question: what power produces this value?"
+        ),
+        "key_points": [
+            "Exponential growth has the form y = a*b^x with b > 1.",
+            "Exponential decay has 0 < b < 1.",
+            "log_b(x) asks for the exponent needed to make b^exponent = x.",
+        ],
+        "example": (
+            "If y = 100(1.05)^t\n"
+            "The starting value is 100\n"
+            "The growth factor is 1.05\n"
+            "This represents 5 percent growth per time period"
+        ),
+        "common_mistakes": [
+            "Confusing the starting value with the growth factor.",
+            "Treating logarithms as ordinary division.",
+            "Using a negative or zero input inside a real logarithm.",
+        ],
+        "practice_prompts": [
+            "learn exponential and logarithmic functions",
+            "study growth and decay models",
+            "revise logarithm laws",
+        ],
+        "starter_prompt": "learn exponential and logarithmic functions",
+        "related_topics": ["indices", "algebra_functions", "calculus_intro"],
+        "keywords": [
+            "exponential",
+            "exponential functions",
+            "logarithm",
+            "logarithmic",
+            "growth and decay",
+        ],
+    },
+    "calculus_intro": {
+        "title": "Introduction to Calculus",
+        "button_label": "Introduction to Calculus",
+        "strand": "Senior Mathematics",
+        "level": "Year 11",
+        "summary": "Understand limits, derivatives, rates of change, and basic differentiation rules.",
+        "explanation": (
+            "Calculus studies change. A derivative measures the instantaneous rate "
+            "of change of a function, which is also the gradient of the tangent at a point."
+        ),
+        "key_points": [
+            "A limit describes what a function approaches near a value.",
+            "The derivative f'(x) gives the gradient function.",
+            "The power rule says d/dx x^n = n*x^(n-1) for many polynomial terms.",
+        ],
+        "example": (
+            "Differentiate f(x) = x^3 + 2x\n"
+            "d/dx x^3 = 3x^2\n"
+            "d/dx 2x = 2\n"
+            "So f'(x) = 3x^2 + 2"
+        ),
+        "common_mistakes": [
+            "Thinking an average rate of change is the same as an instantaneous rate.",
+            "Dropping the coefficient when using the power rule.",
+            "Forgetting that constants differentiate to 0.",
+        ],
+        "practice_prompts": [
+            "learn introduction to calculus",
+            "study derivatives and rates of change",
+            "revise first principles",
+        ],
+        "starter_prompt": "learn introduction to calculus",
+        "related_topics": ["algebra_functions", "advanced_trigonometry", "exponential_logarithmic_functions"],
+        "keywords": [
+            "calculus",
+            "limits",
+            "limit",
+            "derivative",
+            "differentiate",
+            "rates of change",
+            "first principles",
+        ],
+    },
+    "statistics_probability": {
+        "title": "Statistics and Probability",
+        "button_label": "Statistics and Probability",
+        "strand": "Senior Mathematics",
+        "level": "Years 10-11",
+        "summary": "Work with random variables, spread, and multi-stage probability experiments.",
+        "explanation": (
+            "Statistics describes data, while probability models uncertainty. Senior "
+            "questions often combine expected value, variance, standard deviation, "
+            "and tree diagrams."
+        ),
+        "key_points": [
+            "A discrete random variable has listed outcomes with assigned probabilities.",
+            "Variance measures average squared spread from the mean.",
+            "Tree diagrams help organise multi-stage probability experiments.",
+        ],
+        "example": (
+            "For X with values 0, 1, 2 and probabilities 0.2, 0.5, 0.3\n"
+            "E(X) = 0(0.2) + 1(0.5) + 2(0.3)\n"
+            "E(X) = 1.1"
+        ),
+        "common_mistakes": [
+            "Forgetting that probabilities must add to 1.",
+            "Using standard deviation when the question asks for variance.",
+            "Adding probabilities in a tree diagram when multiplication is needed for a sequence.",
+        ],
+        "practice_prompts": [
+            "learn statistics and probability",
+            "study standard deviation",
+            "revise discrete random variables",
+        ],
+        "starter_prompt": "learn statistics and probability",
+        "related_topics": ["probability", "fractions"],
+        "keywords": [
+            "statistics",
+            "statistics and probability",
+            "random variable",
+            "discrete random variables",
+            "variance",
+            "standard deviation",
+            "multi-stage probability",
+        ],
     },
     "probability": {
         "title": "Probability Basics",
