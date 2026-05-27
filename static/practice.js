@@ -1,6 +1,9 @@
 const problemBox = document.getElementById("practiceModeProblem");
+const workingInput = document.getElementById("practiceModeWorking");
 const answerInput = document.getElementById("practiceModeAnswer");
 const checkButton = document.getElementById("practiceModeCheck");
+const checkWorkingButton = document.getElementById("practiceModeCheckWorking");
+const clearWorkingButton = document.getElementById("practiceModeClearWorking");
 const retryButton = document.getElementById("practiceModeRetry");
 const newProblemButton = document.getElementById("practiceModeNew");
 const feedbackBox = document.getElementById("practiceModeFeedback");
@@ -150,11 +153,12 @@ function setProblem(data) {
   currentProblem = data.problem;
   lastResult = null;
   problemBox.textContent = `${data.difficulty} ${formatSkillLabel(data.skill)}\n${data.problem}`;
+  workingInput.value = "";
   answerInput.value = "";
   answerInput.disabled = false;
   checkButton.disabled = false;
-  setFeedback("Solve the problem, then check your answer.", "");
-  answerInput.focus();
+  setFeedback("Use the working space if needed, then check your answer.", "");
+  workingInput.focus();
 }
 
 async function generateProblem(level = currentLevel) {
@@ -205,18 +209,65 @@ async function checkAnswer() {
   }
 }
 
+function getWorkingSteps() {
+  return workingInput.value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+async function checkWorking() {
+  const workingSteps = getWorkingSteps();
+  if (workingSteps.length === 0) {
+    setFeedback("Enter at least one working line before checking.", "error");
+    workingInput.focus();
+    return;
+  }
+
+  const steps = [...workingSteps];
+  if (currentProblem && steps[0] !== currentProblem) {
+    steps.unshift(currentProblem);
+  }
+
+  checkWorkingButton.disabled = true;
+  setFeedback("Checking your working...", "");
+
+  try {
+    const data = await fetchJson("/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ steps }),
+    });
+
+    const result = data.result || "No working feedback available.";
+    const status = result.includes("All transformations") ? "correct" : "error";
+    setFeedback(result, status);
+  } catch (error) {
+    setFeedback(error.message || "Unable to check working.", "error");
+  } finally {
+    checkWorkingButton.disabled = false;
+  }
+}
+
+function clearWorking() {
+  workingInput.value = "";
+  setFeedback("Working space cleared.", "");
+  workingInput.focus();
+}
+
 function retryProblem() {
   if (!currentProblem) {
     setFeedback("Generate a problem before retrying.", "error");
     return;
   }
 
+  workingInput.value = "";
   answerInput.value = "";
   answerInput.disabled = false;
   checkButton.disabled = false;
   lastResult = null;
   setFeedback("Try the same problem again. Your next check will update progress.", "");
-  answerInput.focus();
+  workingInput.focus();
 }
 
 async function loadProgress() {
@@ -250,6 +301,8 @@ document.querySelectorAll("[data-level]").forEach((button) => {
 });
 
 checkButton.addEventListener("click", checkAnswer);
+checkWorkingButton.addEventListener("click", checkWorking);
+clearWorkingButton.addEventListener("click", clearWorking);
 retryButton.addEventListener("click", retryProblem);
 newProblemButton.addEventListener("click", () => generateProblem(currentLevel));
 answerInput.addEventListener("keydown", (event) => {

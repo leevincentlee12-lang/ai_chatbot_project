@@ -435,10 +435,21 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
         self.assertIn("Practice Mode", html)
+        self.assertIn("practiceModeWorking", html)
+        self.assertIn("practiceModeCheckWorking", html)
         self.assertIn("practiceModeAnswer", html)
         self.assertIn("x = 3 or x = -2", html)
         self.assertIn("rational equations", html)
         self.assertIn("practice.js", html)
+
+    def test_validate_endpoint_checks_practice_working_lines(self):
+        response = self.client.post(
+            "/validate",
+            json={"steps": ["2x + 4 = 10", "2x = 6", "x = 3"]},
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertIn("mathematically valid", payload["result"])
 
     def test_progress_page_loads(self):
         response = self.client.get("/progress-page")
