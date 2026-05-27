@@ -1,26 +1,26 @@
 :root {
-    --bg: #f6f8fb;
-    --surface: #ffffff;
-    --surface-muted: #f1f5f9;
-    --ink: #0f172a;
-    --muted: #475569;
-    --line: #d9e2ec;
-    --primary: #1d4ed8;
-    --primary-dark: #1e3a8a;
+    --bg: #f7f2ea;
+    --surface: #fffaf3;
+    --surface-muted: #f2e8dc;
+    --ink: #17110d;
+    --muted: #62564a;
+    --line: #dfcfbd;
+    --primary: #8a3f2b;
+    --primary-dark: #5f2d1f;
     --teal: #0f766e;
     --success-bg: #ecfdf5;
     --success-line: #bbf7d0;
-    --user-bg: #eff6ff;
-    --user-line: #bfdbfe;
-    --warning: #b45309;
+    --user-bg: #edf3ff;
+    --user-line: #c6d8f4;
+    --warning: #a15c18;
     --danger: #b91c1c;
     --danger-bg: #fff7f7;
     --danger-line: #fecaca;
-    --panel-bg: #fbfdff;
-    --soft-primary: #eef2ff;
-    --soft-primary-hover: #e0e7ff;
-    --soft-primary-line: #c7d2fe;
-    --focus-ring: rgba(29, 78, 216, 0.16);
+    --panel-bg: #fffdf8;
+    --soft-primary: #f7e6da;
+    --soft-primary-hover: #efd4c2;
+    --soft-primary-line: #e1bfa7;
+    --focus-ring: rgba(138, 63, 43, 0.18);
     --code-bg: #111827;
     --code-ink: #f8fafc;
     --radius: 8px;
@@ -30,7 +30,7 @@
     --space-lg: 14px;
     --space-xl: 18px;
     --space-2xl: 24px;
-    --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    --shadow: 0 10px 28px rgba(55, 38, 24, 0.08);
 }
 
 * {
@@ -98,7 +98,7 @@ button:disabled {
     min-height: 64px;
     padding: 0 22px;
     border-bottom: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 250, 243, 0.96);
 }
 
 .brand-mark {
@@ -237,6 +237,11 @@ p {
     gap: 20px;
 }
 
+.practice-cta-section .secondary-button {
+    justify-self: center;
+    margin-top: 6px;
+}
+
 .section-heading {
     display: grid;
     gap: 8px;
@@ -302,8 +307,8 @@ p {
 }
 
 .message.bot {
-    border-color: var(--success-line);
-    background: var(--success-bg);
+    border-color: #e4cab2;
+    background: #fff7ec;
 }
 
 .subject-badge {
@@ -378,6 +383,11 @@ p {
 
 .response-section.progress {
     border-left-color: #15803d;
+}
+
+.response-section.algebra-focus {
+    border-left-color: var(--primary-dark);
+    background: #fffaf3;
 }
 
 .input-row {
@@ -535,14 +545,14 @@ select:focus {
     background: var(--danger-bg);
 }
 
-.compact-dashboard {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .student-dashboard {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 12px;
+}
+
+.student-dashboard.compact-dashboard {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
 }
 
 .metric-card {
@@ -876,8 +886,12 @@ select:focus {
 
 .feedback-block {
     align-items: center;
-    margin: 4px 0 18px;
-    padding-left: 2px;
+    max-width: 88%;
+    margin: 6px 0 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(255, 250, 243, 0.84);
+    padding: 10px 12px;
 }
 
 .feedback-title {

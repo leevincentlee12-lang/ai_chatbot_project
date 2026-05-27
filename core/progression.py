@@ -278,26 +278,173 @@ def _difficulty_ranges(level):
     }
 
 
-def generate_problem(level=None, user_id=None):
-    """Generate a linear-equation practice problem."""
-    if level is None:
-        level = get_difficulty(user_id)
+def _signed_number(value):
+    """Format a signed constant for readable algebra strings."""
+    return f" + {value}" if value >= 0 else f" - {abs(value)}"
 
-    ranges = _difficulty_ranges(max(1, int(level)))
+
+def _signed_term(coefficient, variable):
+    """Format a signed variable or constant term after the first term."""
+    absolute = abs(coefficient)
+    if variable:
+        body = variable if absolute == 1 else f"{absolute}{variable}"
+    else:
+        body = str(absolute)
+    return f" + {body}" if coefficient >= 0 else f" - {body}"
+
+
+def _first_linear_term(coefficient):
+    """Format the leading x-term on one side of a linear equation."""
+    if coefficient == 1:
+        return "x"
+    if coefficient == -1:
+        return "-x"
+    return f"{coefficient}x"
+
+
+def _format_linear_side(x_coefficient, constant):
+    """Format ax + b without awkward '+ (-b)' notation."""
+    if x_coefficient == 0:
+        return str(constant)
+
+    side = _first_linear_term(x_coefficient)
+    if constant:
+        side += _signed_term(constant, "")
+    return side
+
+
+def _random_signed(low, high):
+    """Return a random non-zero integer from +/- the given positive range."""
+    value = random.randint(abs(low), abs(high))
+    if value == 0:
+        value = 1
+    return -value if random.randint(0, 1) == 0 else value
+
+
+def _random_nonzero(low, high):
+    """Return a random non-zero integer from an inclusive range."""
+    value = 0
+    while value == 0:
+        value = random.randint(low, high)
+    return value
+
+
+def _generate_basic_linear_problem(ranges):
+    """Generate the original one-variable linear-equation template."""
     a_value = random.randint(*ranges["a_range"])
     b_value = random.randint(*ranges["b_range"])
     solution = random.randint(*ranges["x_range"])
     c_value = a_value * solution + b_value
 
-    problem = f"{a_value}x + ({b_value}) = {c_value}"
-    set_current_topic("linear_equations", user_id=user_id)
-
     return {
         "skill": "linear_equations",
-        "problem": problem,
+        "problem": f"{a_value}x + ({b_value}) = {c_value}",
         "solution": solution,
         "difficulty": ranges["label"],
     }
+
+
+def _generate_two_sided_linear_problem(ranges):
+    """Generate ax + b = cx + d with an integer solution."""
+    solution = random.randint(*ranges["x_range"])
+    left_coefficient = _random_signed(*ranges["a_range"])
+    right_coefficient = left_coefficient
+    while right_coefficient == left_coefficient:
+        right_coefficient = _random_signed(*ranges["a_range"])
+
+    left_constant = random.randint(*ranges["b_range"])
+    right_constant = (
+        left_coefficient * solution
+        + left_constant
+        - right_coefficient * solution
+    )
+
+    return {
+        "skill": "linear_equations",
+        "problem": (
+            f"{_format_linear_side(left_coefficient, left_constant)} = "
+            f"{_format_linear_side(right_coefficient, right_constant)}"
+        ),
+        "solution": solution,
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_parentheses_linear_problem(ranges):
+    """Generate a distributive-property linear equation."""
+    solution = random.randint(*ranges["x_range"])
+    multiplier = random.randint(*ranges["a_range"])
+    shift = _random_nonzero(-6, 6)
+    outside_constant = random.randint(*ranges["b_range"])
+    result = multiplier * (solution + shift) + outside_constant
+    outside_term = _signed_number(outside_constant) if outside_constant else ""
+
+    return {
+        "skill": "linear_equations",
+        "problem": (
+            f"{multiplier}(x{_signed_number(shift)})"
+            f"{outside_term} = {result}"
+        ),
+        "solution": solution,
+        "difficulty": ranges["label"],
+    }
+
+
+def _format_quadratic_expression(b_coefficient, constant):
+    """Format x^2 + bx + c in readable school notation."""
+    expression = "x^2"
+    if b_coefficient:
+        expression += _signed_term(b_coefficient, "x")
+    if constant:
+        expression += _signed_term(constant, "")
+    return expression
+
+
+def _generate_quadratic_problem(ranges):
+    """Generate a factorable quadratic with two integer roots."""
+    root_a = _random_nonzero(*ranges["x_range"])
+    root_b = root_a
+    while root_b == root_a:
+        root_b = _random_nonzero(*ranges["x_range"])
+
+    b_coefficient = -(root_a + root_b)
+    constant = root_a * root_b
+
+    return {
+        "skill": "quadratics",
+        "problem": f"{_format_quadratic_expression(b_coefficient, constant)} = 0",
+        "solution": sorted([root_a, root_b]),
+        "difficulty": ranges["label"],
+    }
+
+
+def generate_problem(level=None, user_id=None):
+    """Generate a practice problem at the requested adaptive difficulty."""
+    if level is None:
+        level = get_difficulty(user_id)
+
+    level = max(1, int(level))
+    ranges = _difficulty_ranges(level)
+
+    if level <= 1:
+        problem_data = _generate_basic_linear_problem(ranges)
+    elif level == 2:
+        generator = random.choice((
+            _generate_basic_linear_problem,
+            _generate_two_sided_linear_problem,
+        ))
+        problem_data = generator(ranges)
+    else:
+        generator = random.choice((
+            _generate_two_sided_linear_problem,
+            _generate_parentheses_linear_problem,
+            _generate_quadratic_problem,
+        ))
+        problem_data = generator(ranges)
+
+    set_current_topic(problem_data["skill"], user_id=user_id)
+
+    return problem_data
 
 
 def generate_adaptive_problem(user_id=None):

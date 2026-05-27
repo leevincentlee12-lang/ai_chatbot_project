@@ -15,7 +15,6 @@ from core.classifier import (
 from core.progression import record_question, update_last_question_time
 from data.constants import (
     EXPERIMENT_MODE_PROMPT,
-    EXPERIMENT_RESTRICTED_MESSAGE,
     FOLLOWUPS_BY_SUBJECT,
     FOLLOWUPS_BY_TOPIC,
     TOPIC_BY_SUBJECT,
@@ -96,6 +95,23 @@ def academic_engine(question, user_id=None):
     return general_explainer(question)
 
 
+def _with_algebra_focus(answer):
+    """Add a gentle algebra focus nudge to non-algebra responses."""
+    text = str(answer or "").strip()
+    if not text:
+        text = general_explainer("")
+
+    if "Algebra Focus" in text:
+        return text
+
+    return (
+        f"{text}\n\n"
+        "Algebra Focus\n"
+        "By the way, this platform is strongest for algebra. If you want to "
+        "focus there, try an equation, a graph question, or Practice Mode next."
+    )
+
+
 def answer_question(question, mode=None, version=None, user_id=None):
     """Answer an experiment-scoped algebra question with routing metadata."""
     text = (question or "").strip()
@@ -117,18 +133,25 @@ def answer_question(question, mode=None, version=None, user_id=None):
     cleaned_text = _strip_mode_instruction(text)
 
     if not _is_algebra_question(cleaned_text, use_hybrid=use_hybrid):
+        subject = classify_subject(text)
+        if subject == "Unknown":
+            topic = TOPIC_BY_SUBJECT["Unknown"]
+        else:
+            topic = detect_topic(subject, text)
+
+        answer = _with_algebra_focus(academic_engine(text, user_id=user_id))
         record_question(
             text,
-            subject="Restricted",
-            topic="Restricted Scope",
+            subject=subject,
+            topic=topic,
             mode=mode,
             user_id=user_id,
         )
         return {
-            "answer": EXPERIMENT_RESTRICTED_MESSAGE,
-            "subject": "Restricted",
-            "topic": "Restricted Scope",
-            "followups": [],
+            "answer": answer,
+            "subject": subject,
+            "topic": topic,
+            "followups": FOLLOWUPS_BY_SUBJECT.get(subject, FOLLOWUPS_BY_SUBJECT["Unknown"]),
         }
 
     resolved_mode = _resolve_experiment_mode(text, mode)

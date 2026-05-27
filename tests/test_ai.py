@@ -7,6 +7,7 @@ from homework_helper import (
     classify_math_request,
     evaluate_answer_details,
     factor_expression,
+    generate_problem,
     generate_lesson,
     handle_math,
     list_lessons,
@@ -43,6 +44,25 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertIn("difficulty", payload)
         self.assertIn("skill", payload)
         self.assertNotIn("solution", payload)
+
+    def test_hard_practice_can_generate_factorable_quadratics(self):
+        with patch("core.progression.random.choice", side_effect=lambda options: options[-1]):
+            problem = generate_problem(level=3, user_id="hard-practice-test")
+
+        self.assertEqual(problem["difficulty"], "Hard")
+        self.assertEqual(problem["skill"], "quadratics")
+        self.assertIn("x^2", problem["problem"])
+        self.assertEqual(len(problem["solution"]), 2)
+
+    def test_quadratic_practice_accepts_complete_solution_set(self):
+        payload = evaluate_answer_details("x^2 - 5x + 6 = 0", "x = 2 or x = 3")
+        self.assertEqual(payload["status"], "correct")
+        self.assertIn("x = 2 or x = 3", payload["result"])
+
+    def test_quadratic_practice_flags_missing_root(self):
+        payload = evaluate_answer_details("x^2 - 5x + 6 = 0", "x = 2")
+        self.assertEqual(payload["status"], "incorrect")
+        self.assertIn("only part of the solution set", payload["details"])
 
     def test_learning_state_remembers_active_practice_problem(self):
         response = self.client.get("/practice/2")
@@ -177,13 +197,25 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertIn("could not read", result["answer"])
         self.assertNotIn("x = 5", result["answer"])
 
-    def test_answer_question_restricts_non_algebra_scope(self):
+    def test_answer_question_allows_general_questions_with_algebra_nudge(self):
         result = answer_question("what caused WW2", mode="direct")
-        self.assertEqual(result["subject"], "Restricted")
-        self.assertEqual(
-            result["answer"],
-            "This system is restricted to algebra questions for this experiment.",
-        )
+        self.assertEqual(result["subject"], "Humanities")
+        self.assertEqual(result["topic"], "History and Geography")
+        self.assertIn("WW2 was caused", result["answer"])
+        self.assertIn("Algebra Focus", result["answer"])
+
+    def test_what_can_you_do_gets_helpful_general_answer(self):
+        result = answer_question("what can you do", mode="direct")
+        self.assertEqual(result["subject"], "Unknown")
+        self.assertIn("guided algebra learning platform", result["answer"])
+        self.assertIn("Algebra Focus", result["answer"])
+
+    def test_help_question_explains_platform_use(self):
+        result = answer_question("how do I use this", mode="direct")
+        self.assertEqual(result["subject"], "Unknown")
+        self.assertIn("Use Direct for a final answer", result["answer"])
+        self.assertIn("Practice Mode", result["answer"])
+        self.assertIn("Try an algebra equation", result["followups"])
 
     def test_direct_mode_returns_final_answer_only(self):
         result = answer_question("solve 2x + 4 = 10", mode="direct")
@@ -278,6 +310,17 @@ class HomeworkHelperAppTests(unittest.TestCase):
         payload = response.get_json()
         self.assertEqual(payload["answer"], "x = 3")
 
+    def test_homepage_links_to_practice_mode_without_embedded_practice_widget(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("Open Practice Mode", html)
+        self.assertIn('href="/practice"', html)
+        self.assertNotIn("practice-easy", html)
+        self.assertNotIn("practiceProblem", html)
+        self.assertNotIn("studentAnswer", html)
+        self.assertNotIn("submit-answer", html)
+
     def test_homepage_shows_external_feedback_form_link_when_configured(self):
         with patch.dict(
             "os.environ",
@@ -308,6 +351,7 @@ class HomeworkHelperAppTests(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertIn("Practice Mode", html)
         self.assertIn("practiceModeAnswer", html)
+        self.assertIn("x = 3 or x = -2", html)
         self.assertIn("practice.js", html)
 
     def test_progress_page_loads(self):

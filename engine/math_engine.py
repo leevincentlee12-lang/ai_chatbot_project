@@ -15,6 +15,7 @@ from engine.algebra_solver import (
     solve_quadratic,
     solve_simultaneous,
     solve_value,
+    solve_values,
     sympy_solve_equation,
 )
 from engine.math_answer_checker import (
@@ -70,6 +71,7 @@ __all__ = [
     "solve_quadratic",
     "solve_simultaneous",
     "solve_value",
+    "solve_values",
     "start_guided_problem",
     "sympy_solve_equation",
 ]

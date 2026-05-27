@@ -1,5 +1,7 @@
 """Answer checking and diagnostic feedback for math practice."""
 
+import re
+
 from core.parser import (
     MATH_PARSE_ERROR_MESSAGE,
     _extract_numeric_answer,
@@ -13,13 +15,76 @@ from core.progression import (
     record_problem_attempt,
     update_progression,
 )
-from engine.algebra_solver import _parse_linear_equation, solve_value
+from engine.algebra_solver import _parse_linear_equation, solve_values
 from utils.formatting import (
     _compose_message,
     _format_skill_label,
     _format_value,
     _section,
 )
+
+
+def _extract_numeric_answers(answer):
+    """Parse one or more numeric answers from student input."""
+    text = str(answer or "").strip()
+    if not text:
+        return None
+
+    cleaned = text.replace("{", "").replace("}", "")
+    cleaned = cleaned.replace("[", "").replace("]", "")
+    cleaned = re.sub(r"\b(?:or|and)\b", ",", cleaned, flags=re.IGNORECASE)
+    cleaned = cleaned.replace(";", ",")
+    parts = [part.strip() for part in cleaned.split(",") if part.strip()]
+
+    values = []
+    for part in parts or [cleaned]:
+        value = _extract_numeric_answer(part)
+        if value is None:
+            return None
+        if not any(abs(value - existing) < 1e-9 for existing in values):
+            values.append(value)
+
+    return sorted(values)
+
+
+def _format_solution_set(values):
+    """Format one or more x-values for display."""
+    return " or ".join(f"x = {_format_value(value)}" for value in values)
+
+
+def _values_match(expected, submitted):
+    """Return whether two numeric solution sets match within tolerance."""
+    if len(expected) != len(submitted):
+        return False
+    return all(abs(a - b) < 1e-9 for a, b in zip(expected, submitted))
+
+
+def _diagnose_solution_set_answer(expected_values, submitted_values):
+    """Explain common mistakes for equations with more than one solution."""
+    expected_text = _format_solution_set(expected_values)
+
+    if len(submitted_values) < len(expected_values):
+        return {
+            "issue": "You found only part of the solution set.",
+            "fix": (
+                "For a quadratic, each factor can produce a separate x-value. "
+                "List every value that makes the equation true."
+            ),
+            "next_step": f"Check both roots: {expected_text}.",
+        }
+
+    if len(submitted_values) > len(expected_values):
+        return {
+            "issue": "You included an extra value that does not satisfy the equation.",
+            "fix": "Substitute each listed value back into the original equation and remove any that fail.",
+            "next_step": f"The complete solution set is {expected_text}.",
+        }
+
+    return {
+        "issue": "At least one value in your solution set is incorrect.",
+        "fix": "Factor the quadratic or solve it again, then check each root by substitution.",
+        "next_step": f"The complete solution set is {expected_text}.",
+    }
 
 
 def _diagnose_linear_answer(eq, student_value, correct):
@@ -101,32 +166,38 @@ def evaluate_answer_details(eq, student_answer, user_id=None):
             ],
         }
 
-    correct = solve_value(eq)
-    if correct is None:
+    correct_values = solve_values(eq)
+    if correct_values is None:
         return {
             "status": "error",
             "headline": "Unsupported Problem",
-            "result": "This answer checker currently supports equations with one numeric solution.",
-            "details": "This answer checker currently supports equations with one numeric solution.",
-            "next_steps": ["Try a linear equation with one answer."],
+            "result": "This answer checker currently supports equations with real numeric solutions.",
+            "details": "This answer checker currently supports equations with real numeric solutions.",
+            "next_steps": ["Try a linear equation or a factorable quadratic equation."],
         }
 
-    student_value = _extract_numeric_answer(student_answer)
-    if student_value is None:
-        message = "Enter a numeric answer such as 5, -2, or x = 3/2."
+    student_values = _extract_numeric_answers(student_answer)
+    if student_values is None:
+        if len(correct_values) == 1:
+            message = "Enter a numeric answer such as 5, -2, or x = 3/2."
+            next_step = "Use a single numeric value or x = value."
+        else:
+            message = "Enter all solutions, for example x = 2 or x = 3."
+            next_step = "Separate multiple solutions with 'or' or commas."
         return {
             "status": "error",
             "headline": "Invalid Answer Format",
             "result": message,
             "details": message,
-            "next_steps": ["Use a single numeric value or x = value."],
+            "next_steps": [next_step],
         }
 
     record_problem_attempt(user_id=user_id)
 
     skill = detect_math_skill(eq) or "linear_equations"
+    correct_text = _format_solution_set(correct_values)
 
-    if abs(correct - student_value) < 1e-9:
+    if _values_match(correct_values, student_values):
         skill_data = adjust_skill(
             skill,
             score_delta=5,
@@ -137,10 +208,10 @@ def evaluate_answer_details(eq, student_answer, user_id=None):
         level_message = update_progression(True, user_id=user_id)
 
         details = _compose_message(
-            _section("Result", f"Correct. x = {_format_value(correct)}"),
+            _section("Result", f"Correct. {correct_text}"),
             _section(
                 "Why It Works",
-                "Your value satisfies the original equation, so the balance is preserved.",
+                "Your value or solution set satisfies the original equation.",
             ),
             _section(
                 "Mastery",
@@ -154,7 +225,7 @@ def evaluate_answer_details(eq, student_answer, user_id=None):
         return {
             "status": "correct",
             "headline": "Correct",
-            "result": f"Correct. x = {_format_value(correct)}",
+            "result": f"Correct. {correct_text}",
             "details": details,
             "next_steps": [
                 f"Give me a harder equation like {eq}",
@@ -169,17 +240,21 @@ def evaluate_answer_details(eq, student_answer, user_id=None):
         user_id=user_id,
     )
     update_progression(False, user_id=user_id)
-    diagnosis = _diagnose_linear_answer(eq, student_value, correct)
+    if len(correct_values) == 1 and len(student_values) == 1:
+        diagnosis = _diagnose_linear_answer(eq, student_values[0], correct_values[0])
+    else:
+        diagnosis = _diagnose_solution_set_answer(correct_values, student_values)
+
     record_mistake(
         skill=skill,
         question=eq,
         submitted_answer=student_answer,
-        correct_answer=f"x = {_format_value(correct)}",
+        correct_answer=correct_text,
         issue=diagnosis["issue"],
         user_id=user_id,
     )
     details = _compose_message(
-        _section("Result", f"Not correct yet. The correct answer is x = {_format_value(correct)}"),
+        _section("Result", f"Not correct yet. The correct answer is {correct_text}"),
         _section("Likely Issue", diagnosis["issue"]),
         _section("How To Fix It", diagnosis["fix"]),
         _section(
@@ -191,7 +266,7 @@ def evaluate_answer_details(eq, student_answer, user_id=None):
     return {
         "status": "incorrect",
         "headline": "Not Yet",
-        "result": f"Incorrect. Correct answer: x = {_format_value(correct)}",
+        "result": f"Incorrect. Correct answer: {correct_text}",
         "details": details,
         "next_steps": [
             f"Give me a similar problem to {eq}",

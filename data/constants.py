@@ -89,9 +89,9 @@ FOLLOWUPS_BY_SUBJECT = {
         "Turn this into study notes",
     ],
     "Unknown": [
-        "Ask a maths question",
-        "Ask a science question",
-        "Ask for writing help",
+        "Ask how to use this platform",
+        "Try an algebra equation",
+        "Open Practice Mode",
     ],
 }
 

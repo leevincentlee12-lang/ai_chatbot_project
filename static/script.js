@@ -2,8 +2,6 @@ const messagesDiv = document.getElementById("messages");
 const questionInput = document.getElementById("question");
 const askButton = document.getElementById("ask");
 const modeSelect = document.getElementById("modeSelect");
-const studentAnswerInput = document.getElementById("studentAnswer");
-const practiceProblemBox = document.getElementById("practiceProblem");
 const analyticsBox = document.getElementById("analyticsBox");
 const feedbackBox = document.getElementById("feedbackBox");
 const lessonGrid = document.getElementById("lessonGrid");
@@ -19,8 +17,6 @@ const dashboard = {
   streak: document.getElementById("dash-streak"),
 };
 
-let currentProblem = null;
-let currentPracticePrompts = [];
 let lastQuestion = "";
 
 const RESPONSE_SECTION_LABELS = new Map([
@@ -34,6 +30,7 @@ const RESPONSE_SECTION_LABELS = new Map([
   ["likely issue", "Check"],
   ["mastery", "Progress"],
   ["next step", "Next Step"],
+  ["algebra focus", "Algebra Focus"],
 ]);
 
 function appendMessage(text, who = "bot") {
@@ -422,24 +419,6 @@ async function askQuestionWithText(question, mode = "") {
   }
 }
 
-async function getPractice(level) {
-  try {
-    const data = await fetchJson(`/practice/${level}`);
-    currentProblem = data.problem;
-    currentPracticePrompts = [
-      `Show the full working for ${data.problem}`,
-      `Give me a hint for ${data.problem}`,
-      `Give me a similar problem to ${data.problem}`,
-    ];
-    practiceProblemBox.textContent =
-      `${data.difficulty} ${data.skill.replace(/_/g, " ")} problem:\n${data.problem}`;
-    studentAnswerInput.value = "";
-    loadStudentDashboard();
-  } catch (error) {
-    practiceProblemBox.textContent = error.message || "Unable to load practice problem.";
-  }
-}
-
 async function showProgress() {
   try {
     const data = await fetchJson("/progress");
@@ -479,60 +458,6 @@ async function showSkills() {
     loadStudentDashboard();
   } catch (error) {
     feedbackBox.textContent = error.message || "Unable to load skills.";
-  }
-}
-
-async function submitAnswer() {
-  if (!currentProblem) {
-    appendMessage("Generate a practice problem before submitting an answer.", "bot");
-    return;
-  }
-
-  const answer = studentAnswerInput.value.trim();
-  if (!answer) {
-    appendMessage("Enter an answer before submitting.", "bot");
-    return;
-  }
-
-  try {
-    const data = await fetchJson("/check-answer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        equation: currentProblem,
-        answer,
-      }),
-    });
-
-    appendStructuredPracticeFeedback(data);
-    loadStudentDashboard();
-  } catch (error) {
-    appendMessage(error.message || "Unable to check answer.", "bot");
-  }
-}
-
-function appendStructuredPracticeFeedback(data) {
-  const container = document.createElement("div");
-  container.className = `message bot ${data.status || ""}`.trim();
-
-  if (data.headline) {
-    const badge = document.createElement("div");
-    badge.className = `subject-badge practice-${data.status || "neutral"}`;
-    badge.textContent = data.headline;
-    container.appendChild(badge);
-  }
-
-  container.appendChild(renderEducationalResponse(
-    data.details || data.result || "No feedback available.",
-  ));
-  messagesDiv.appendChild(container);
-
-  const prompts = Array.isArray(data.next_steps) && data.next_steps.length > 0
-    ? data.next_steps
-    : currentPracticePrompts;
-
-  if (prompts.length > 0) {
-    appendActionChips(prompts, "Practice follow-up");
   }
 }
 
@@ -638,10 +563,6 @@ questionInput.addEventListener("keydown", (event) => {
   }
 });
 
-bindClick("submit-answer", submitAnswer);
-bindClick("practice-easy", () => getPractice(1));
-bindClick("practice-medium", () => getPractice(2));
-bindClick("practice-hard", () => getPractice(3));
 bindClick("refresh-dashboard", loadStudentDashboard);
 bindClick("show-progress", showProgress);
 bindClick("show-skills", showSkills);

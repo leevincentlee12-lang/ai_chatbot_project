@@ -130,6 +130,7 @@ _EXPORTS = {
         "solve_quadratic",
         "solve_simultaneous",
         "solve_value",
+        "solve_values",
         "start_guided_problem",
         "sympy_solve_equation",
         "_answer_expand_question",

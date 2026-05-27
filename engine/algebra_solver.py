@@ -263,23 +263,53 @@ def factor_expression(expr):
     )
 
 
-def solve_value(eq):
-    """Solve an equation for a single numeric x-value when possible."""
+def _numeric_solution_values(solutions):
+    """Return sorted unique real numeric solutions from SymPy output."""
+    values = []
+    for solution in solutions:
+        if getattr(solution, "is_real", None) is False:
+            continue
+
+        try:
+            numeric = simplify(solution)
+        except Exception:
+            numeric = solution
+
+        if getattr(numeric, "free_symbols", set()):
+            continue
+
+        try:
+            value = float(numeric)
+        except (TypeError, ValueError):
+            continue
+
+        if not any(abs(value - existing) < 1e-9 for existing in values):
+            values.append(value)
+
+    return sorted(values)
+
+
+def solve_values(eq):
+    """Solve an equation for all real numeric x-values when possible."""
     if has_obvious_malformed_math_input(eq):
         return None
 
     try:
-        solution = solve(_equation_to_expression(eq), x)
+        solutions = solve(_equation_to_expression(eq), x)
     except Exception:
         return None
 
-    if len(solution) != 1:
+    values = _numeric_solution_values(solutions)
+    return values if values else None
+
+
+def solve_value(eq):
+    """Solve an equation for a single numeric x-value when possible."""
+    values = solve_values(eq)
+    if not values or len(values) != 1:
         return None
 
-    try:
-        return float(solution[0])
-    except (TypeError, ValueError):
-        return None
+    return values[0]
 
 
 def sympy_solve_equation(eq):
