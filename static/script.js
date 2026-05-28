@@ -18,6 +18,7 @@ const dashboard = {
 };
 
 let lastQuestion = "";
+let loadingTimer = null;
 
 const RESPONSE_SECTION_LABELS = new Map([
   ["answer", "Answer"],
@@ -48,9 +49,21 @@ function appendLoading() {
   element.innerHTML = 'Platform: <span class="dots">Preparing guidance</span>';
   messagesDiv.appendChild(element);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+  loadingTimer = window.setTimeout(() => {
+    const loadingElement = document.getElementById("loading");
+    if (loadingElement) {
+      loadingElement.textContent = "Platform: Still preparing guidance. The first request can take longer while the server starts.";
+    }
+  }, 7000);
 }
 
 function removeLoading() {
+  if (loadingTimer) {
+    window.clearTimeout(loadingTimer);
+    loadingTimer = null;
+  }
+
   const element = document.getElementById("loading");
   if (element) {
     element.remove();
@@ -123,7 +136,56 @@ function renderEducationalResponse(text) {
   return wrapper;
 }
 
-function appendStructuredBotMessage(data, originalQuestion) {
+function getPromptMode(prompt) {
+  const text = String(prompt || "").toLowerCase();
+  if (text.includes("hint")) {
+    return "hint";
+  }
+  if (text.includes("working") || text.includes("step")) {
+    return "step-by-step";
+  }
+  if (text.includes("direct")) {
+    return "direct";
+  }
+  return modeSelect ? modeSelect.value : "";
+}
+
+function extractEquationText(question) {
+  const text = String(question || "").trim();
+  if (!text || !text.includes("=")) {
+    return "";
+  }
+
+  return text
+    .replace(/^\s*(solve(?:\s+for\s+x)?|find\s+x(?:\s+(?:in|if|when))?|what\s+is\s+x(?:\s+(?:if|in|when))?|show\s+the\s+full\s+working\s+for|give\s+me\s+a\s+hint\s+for)\s*[:,-]?\s*/i, "")
+    .trim();
+}
+
+function getMathSupportPrompts(data, originalQuestion, currentMode = "") {
+  if ((data.subject || "").toLowerCase() !== "math") {
+    return [];
+  }
+
+  const equation = extractEquationText(originalQuestion);
+  if (!equation || !/[xy]/i.test(equation)) {
+    return [];
+  }
+
+  const prompts = [];
+  prompts.push({
+    label: currentMode === "hint" ? "Ask for another hint" : "Ask for a hint",
+    prompt: `give me a hint for ${equation}`,
+    mode: "hint",
+  });
+  prompts.push({
+    label: "Show step-by-step working",
+    prompt: `show the full working for ${equation}`,
+    mode: "step-by-step",
+  });
+  return prompts;
+}
+
+function appendStructuredBotMessage(data, originalQuestion, currentMode = "") {
   const container = document.createElement("div");
   container.className = "message bot";
 
@@ -143,6 +205,12 @@ function appendStructuredBotMessage(data, originalQuestion) {
   if (Array.isArray(data.followups) && data.followups.length > 0) {
     appendActionChips(data.followups, "Try next");
   }
+
+  const supportPrompts = getMathSupportPrompts(data, originalQuestion, currentMode);
+  if (supportPrompts.length > 0) {
+    appendActionChips(supportPrompts, "Need more support?");
+  }
+
   appendFeedbackBlock(data, originalQuestion);
 }
 
@@ -188,14 +256,20 @@ function appendActionChips(prompts, label = "Suggested prompts") {
   title.textContent = label;
   wrapper.appendChild(title);
 
-  prompts.forEach((prompt) => {
+  prompts.forEach((item) => {
+    const prompt = typeof item === "string" ? item : item.prompt;
+    const chipLabel = typeof item === "string" ? item : item.label;
+    const chipMode = typeof item === "string"
+      ? getPromptMode(prompt)
+      : (item.mode || getPromptMode(prompt));
+
     const button = document.createElement("button");
     button.className = "followup-chip";
     button.type = "button";
-    button.textContent = prompt;
+    button.textContent = chipLabel || prompt;
     button.addEventListener("click", () => askQuestionWithText(
       prompt,
-      modeSelect ? modeSelect.value : "",
+      chipMode,
     ));
     wrapper.appendChild(button);
   });
@@ -409,7 +483,7 @@ async function askQuestionWithText(question, mode = "") {
     });
 
     removeLoading();
-    appendStructuredBotMessage(data, trimmedQuestion);
+    appendStructuredBotMessage(data, trimmedQuestion, mode);
     loadStudentDashboard();
   } catch (error) {
     removeLoading();

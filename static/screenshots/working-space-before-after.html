@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Practice Working Space Comparison</title>
+  <style>
+    :root {
+      --ink: #10182f;
+      --muted: #4c5872;
+      --line: #d7deea;
+      --soft: #f7f4ee;
+      --before: #eef3fb;
+      --after: #ecfbf3;
+      --blue: #2452d6;
+      --green: #087d56;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--soft);
+      color: var(--ink);
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 36px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .panel {
+      min-height: 690px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: white;
+    }
+
+    .panel.before {
+      background: var(--before);
+    }
+
+    .panel.after {
+      background: var(--after);
+    }
+
+    .label {
+      display: inline-flex;
+      margin-bottom: 14px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .before .label {
+      background: var(--blue);
+    }
+
+    .after .label {
+      background: var(--green);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 24px;
+    }
+
+    .mock-card {
+      margin: 16px 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: 10px;
+      background: white;
+    }
+
+    .after .mock-card {
+      border-left-color: var(--green);
+    }
+
+    .tag {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .problem {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .field {
+      margin-top: 14px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .input,
+    .textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      padding: 12px 14px;
+      font-size: 16px;
+    }
+
+    .textarea {
+      min-height: 138px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      line-height: 1.55;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--blue);
+      border-radius: 10px;
+      color: var(--blue);
+      background: white;
+      font-weight: 800;
+    }
+
+    .after .button {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .primary {
+      color: white;
+      background: var(--blue);
+    }
+
+    .after .primary {
+      background: var(--green);
+      color: white;
+    }
+
+    ul {
+      margin: 18px 0 0;
+      padding-left: 22px;
+    }
+
+    li {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .note {
+      margin-top: 26px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Practice Working Space Upgrade</h1>
+    <p class="subtitle">The practice flow now supports visible working before the final answer is submitted.</p>
+
+    <section class="comparison" aria-label="Working space before and after comparison">
+      <article class="panel before">
+        <span class="label">Before</span>
+        <h2>Final Answer Only</h2>
+        <div class="mock-card">
+          <div class="tag">Generated Problem</div>
+          <div class="problem">2x + 4 = 10</div>
+
+          <div class="field">
+            <label>Your answer</label>
+            <div class="input">x = 3</div>
+          </div>
+
+          <div class="button-row">
+            <div class="button primary">Check Answer</div>
+          </div>
+        </div>
+
+        <ul>
+          <li>Students had to jump straight to the final answer.</li>
+          <li>The interface did not encourage showing working.</li>
+          <li>It was harder to tell whether a student understood the method.</li>
+        </ul>
+      </article>
+
+      <article class="panel after">
+        <span class="label">After</span>
+        <h2>Working + Final Answer</h2>
+        <div class="mock-card">
+          <div class="tag">Generated Problem</div>
+          <div class="problem">2x + 4 = 10</div>
+
+          <div class="field">
+            <label>Working space</label>
+            <div class="textarea">2x + 4 = 10
+2x = 6
+x = 3</div>
+          </div>
+
+          <div class="button-row">
+            <div class="button">Check Working</div>
+            <div class="button">Clear Working</div>
+          </div>
+
+          <div class="field">
+            <label>Your answer</label>
+            <div class="input">x = 3</div>
+          </div>
+
+          <div class="button-row">
+            <div class="button primary">Check Answer</div>
+          </div>
+        </div>
+
+        <ul>
+          <li>Students can show each algebra step before submitting.</li>
+          <li>Working is checked through the existing step-validation backend.</li>
+          <li>The final answer check still updates practice progress.</li>
+        </ul>
+      </article>
+    </section>
+
+    <p class="note">This comparison summarises the Practice Mode working-space feature added from student feedback.</p>
+  </main>
+</body>
+</html>

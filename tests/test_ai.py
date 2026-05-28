@@ -406,6 +406,13 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertNotIn("studentAnswer", html)
         self.assertNotIn("submit-answer", html)
 
+    def test_homepage_defaults_to_step_by_step_mode(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn('<option value="step-by-step" selected>Step-by-step</option>', html)
+        self.assertNotIn('<option value="">Choose mode</option>', html)
+
     def test_homepage_shows_external_feedback_form_link_when_configured(self):
         with patch.dict(
             "os.environ",
