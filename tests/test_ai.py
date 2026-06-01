@@ -230,6 +230,7 @@ class HomeworkHelperAppTests(unittest.TestCase):
             "find x in 4x - 9 = 3": "x = 3",
             "what is x if 3x = 12": "x = 4",
             "solve for x: 2x + 4 = 10": "x = 3",
+            "find x in -6x + 2 = 8x - 82": "x = 6",
         }
 
         for question, expected in examples.items():
@@ -237,6 +238,24 @@ class HomeworkHelperAppTests(unittest.TestCase):
                 result = answer_question(question, mode="direct")
                 self.assertEqual(result["subject"], "Math")
                 self.assertEqual(result["answer"], expected)
+
+    def test_quadratic_solve_is_labelled_as_quadratic(self):
+        result = answer_question("solve 3x^2 - 4x - 4 = 0", mode="step-by-step")
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Quadratic Equations")
+        self.assertIn("x = -2/3 or x = 2", result["answer"])
+
+    def test_trig_solve_is_labelled_as_trigonometry(self):
+        result = answer_question("find x if sin 35 = x/12", mode="step-by-step")
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Trigonometry")
+        self.assertIn("x =", result["answer"])
+
+    def test_factor_question_is_labelled_as_factoring_even_with_x_squared(self):
+        result = answer_question("factor x^2 - 9", mode="step-by-step")
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Factoring")
+        self.assertIn("(x - 3)*(x + 3)", result["answer"])
 
     def test_malformed_step_validation_returns_educational_error(self):
         result = validate_steps([

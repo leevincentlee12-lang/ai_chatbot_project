@@ -79,7 +79,7 @@ def _clean_math_prompt(text):
         r"show\s+the\s+full\s+working\s+for|give\s+me\s+a\s+hint\s+for|"
         r"give\s+me\s+a\s+harder\s+equation\s+like|give\s+me\s+a\s+similar\s+problem\s+to|"
         r"give\s+me\s+another\s+quadratic\s+like|check\s+my\s+answer\s+for|"
-        r"explain\s+the\s+discriminant\s+in)\s*[:,-]?\s*",
+        r"explain\s+the\s+discriminant\s+in)\s*[:,]?\s*",
         "",
         str(text or "").strip(),
     ).strip()
@@ -179,9 +179,16 @@ def get_followups(subject, topic, question="", answer_text=""):
                 "Explain why each step keeps the equation balanced",
             ]
         if topic == "Quadratic Equations":
+            left_side = cleaned.split("=", 1)[0].strip()
+            if "discriminant" in text.lower():
+                return [
+                    f"Show the full working for {cleaned}",
+                    f"Factor {left_side}",
+                    f"Give me another quadratic like {cleaned}",
+                ]
             return [
                 f"Explain the discriminant in {cleaned}",
-                f"Factor {cleaned.split('=', 1)[0].strip()}",
+                f"Factor {left_side}",
                 f"Give me another quadratic like {cleaned}",
             ]
 
@@ -227,6 +234,27 @@ def get_followups(subject, topic, question="", answer_text=""):
             f"Expand {factored}",
             f"Give me another factoring problem like {cleaned}",
             f"Explain why {factored} multiplies back to {cleaned}",
+        ]
+
+    if subject == "Math" and topic == "Algebraic Expressions":
+        return [
+            "Simplify 4x - 2 + 3x",
+            "Expand (x + 2)(x - 5)",
+            "Factor x^2 - 9",
+        ]
+
+    if subject == "Math" and topic == "Ratios":
+        return [
+            "Simplify the ratio 12:18",
+            "Simplify the ratio 15:25",
+            "Learn fractions",
+        ]
+
+    if subject == "Math" and topic == "Trigonometry":
+        return [
+            "Find x if cos 40 = x/10",
+            "Learn trigonometry",
+            "Explain sine cosine and tangent",
         ]
 
     if subject == "Math" and topic == "Practice":

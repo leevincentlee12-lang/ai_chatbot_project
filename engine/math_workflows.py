@@ -106,7 +106,7 @@ def _strip_equation_prompt(text):
         r"(?i)^\s*(?:solve(?:\s+for\s+x)?|find\s+x(?:\s+(?:in|if|when))?|"
         r"what\s+is\s+x(?:\s+(?:if|in|when))?|calculate\s+x(?:\s+(?:if|in|when))?|"
         r"determine\s+x(?:\s+(?:if|in|when))?|work\s+out\s+x(?:\s+(?:if|in|when))?|"
-        r"show\s+me|solve:)\s*[:,-]?\s*",
+        r"show\s+me|solve:)\s*[:,]?\s*",
         "",
         cleaned,
     )

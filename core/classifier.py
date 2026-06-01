@@ -238,7 +238,7 @@ def _resolve_experiment_mode(question, mode=None):
 def _strip_mode_instruction(question):
     """Remove natural-language mode instructions before algebra parsing."""
     cleaned = re.sub(
-        r"^\s*(direct|hint|step(?:-by-step| by step))(?:\s+mode)?\s*[:,-]?\s*",
+        r"^\s*(direct|hint|step(?:-by-step| by step))(?:\s+mode)?\s*[:,]?\s*",
         "",
         str(question or ""),
         flags=re.IGNORECASE,
@@ -312,6 +312,25 @@ def _is_algebra_question(question, use_hybrid=None):
 def _detect_experiment_topic(question):
     """Return the experiment topic label for an algebra-scoped question."""
     q_lower = _normalise_text(question)
+
+    if re.search(r"-?\d+\s*:\s*-?\d+", q_lower) or "ratio" in q_lower:
+        return "Ratios"
+
+    if re.search(r"\b(?:sin|cos|tan)\b", q_lower):
+        return "Trigonometry"
+
+    if re.search(r"\bfactor(?:ise|ize)?\b", q_lower):
+        return "Factoring"
+
+    if re.search(r"\b(?:simplify|expand|collect\s+like\s+terms|combine\s+like\s+terms)\b", q_lower):
+        return "Algebraic Expressions"
+
+    if " and " in q_lower and "=" in q_lower and "y" in q_lower:
+        return "Simultaneous Equations"
+
+    if "x^2" in q_lower or re.search(r"\bx\s*squared\b", q_lower) or "quadratic" in q_lower:
+        return "Quadratic Equations"
+
     match = classify_intent(q_lower)
     if match.confidence >= 0.20 and match.topic not in {
         "Hint",
@@ -321,9 +340,6 @@ def _detect_experiment_topic(question):
         "Explanation",
     }:
         return match.topic
-
-    if re.search(r"-?\d+\s*:\s*-?\d+", q_lower) or "ratio" in q_lower:
-        return "Ratios"
 
     if "=" in q_lower and "x" in q_lower:
         return "Linear Equations"
