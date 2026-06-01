@@ -177,11 +177,14 @@ function getMathSupportPrompts(data, originalQuestion, currentMode = "") {
     prompt: `give me a hint for ${equation}`,
     mode: "hint",
   });
-  prompts.push({
-    label: "Show step-by-step working",
-    prompt: `show the full working for ${equation}`,
-    mode: "step-by-step",
-  });
+
+  if (currentMode !== "step-by-step") {
+    prompts.push({
+      label: "Show step-by-step working",
+      prompt: `show the full working for ${equation}`,
+      mode: "step-by-step",
+    });
+  }
   return prompts;
 }
 
@@ -256,12 +259,20 @@ function appendActionChips(prompts, label = "Suggested prompts") {
   title.textContent = label;
   wrapper.appendChild(title);
 
+  const seen = new Set();
+
   prompts.forEach((item) => {
     const prompt = typeof item === "string" ? item : item.prompt;
     const chipLabel = typeof item === "string" ? item : item.label;
     const chipMode = typeof item === "string"
       ? getPromptMode(prompt)
       : (item.mode || getPromptMode(prompt));
+    const key = `${chipLabel || prompt}|${chipMode}`;
+
+    if (!prompt || seen.has(key)) {
+      return;
+    }
+    seen.add(key);
 
     const button = document.createElement("button");
     button.className = "followup-chip";

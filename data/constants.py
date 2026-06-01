@@ -110,8 +110,8 @@ FOLLOWUPS_BY_SUBJECT = {
     ],
     "Unknown": [
         "Ask how to use this platform",
-        "Try an algebra equation",
-        "Open Practice Mode",
+        "Solve 2x + 4 = 10",
+        "Practice problem",
     ],
 }
 

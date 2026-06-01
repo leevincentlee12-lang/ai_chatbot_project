@@ -168,6 +168,12 @@ class HomeworkHelperAppTests(unittest.TestCase):
             "solve x+y=5 and x-y=1": "solve_simultaneous",
             "validate steps": "validate_steps",
             "practice problem": "generate_problem",
+            "give me another linear equation": "generate_problem_linear",
+            "give me a different linear equation": "generate_problem_linear",
+            "give me another quadratic like x^2 - 5x + 6 = 0": "generate_problem_quadratic",
+            "give me a different quadratic problem": "generate_problem_quadratic",
+            "explain why each step keeps the equation balanced": "explain_balance",
+            "is x = 3 correct for 2x + 4 = 10": "check_answer_inline",
         }
 
         for question, expected_intent in examples.items():
@@ -270,12 +276,87 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertEqual(result["subject"], "Unknown")
         self.assertIn("Use Direct for a final answer", result["answer"])
         self.assertIn("Practice Mode", result["answer"])
-        self.assertIn("Try an algebra equation", result["followups"])
+        self.assertIn("Solve 2x + 4 = 10", result["followups"])
+        self.assertIn("Practice problem", result["followups"])
 
     def test_direct_mode_returns_final_answer_only(self):
         result = answer_question("solve 2x + 4 = 10", mode="direct")
         self.assertEqual(result["answer"], "x = 3")
-        self.assertEqual(result["followups"], [])
+        self.assertIn("Give me a harder equation like 2x + 4 = 10", result["followups"])
+        self.assertIn("Give me a similar problem to 2x + 4 = 10", result["followups"])
+
+    def test_linear_equation_followups_are_actionable(self):
+        result = answer_question("solve 2x + 4 = 10", mode="step-by-step")
+        self.assertIn("Give me a harder equation like 2x + 4 = 10", result["followups"])
+        self.assertIn("Explain why each step keeps the equation balanced", result["followups"])
+        self.assertNotIn("Check my answer for a linear equation", result["followups"])
+
+    def test_workflow_prompts_route_without_dead_ends(self):
+        examples = [
+            "give me a harder equation like 2x + 4 = 10",
+            "give me another quadratic like x^2 - 5x + 6 = 0",
+            "give me another linear equation",
+            "check my answer for 2x + 4 = 10",
+            "is x = 3 correct for 2x + 4 = 10",
+            "question: 2x + 4 = 10 answer: x = 3",
+            "explain why each step keeps the equation balanced",
+        ]
+
+        for question in examples:
+            with self.subTest(question=question):
+                result = answer_question(question, mode="step-by-step")
+                self.assertEqual(result["subject"], "Math")
+                self.assertNotIn("Provide an algebra equation", result["answer"])
+                self.assertNotIn("This algebra workflow supports", result["answer"])
+
+    def test_workflow_followups_are_contextual_not_generic(self):
+        result = answer_question(
+            "give me another quadratic like x^2 - 5x + 6 = 0",
+            mode="step-by-step",
+        )
+        self.assertEqual(result["topic"], "Practice")
+        self.assertNotIn("Give me another quadratic like x^2 - 5x + 6 = 0", result["followups"])
+        self.assertTrue(
+            any(item.startswith("Show the full working for ") for item in result["followups"])
+        )
+        self.assertTrue(
+            any(item.startswith("Explain the discriminant in ") for item in result["followups"])
+        )
+
+    def test_generated_problem_followups_do_not_repeat_request(self):
+        result = answer_question(
+            "give me a harder equation like 2x + 4 = 10",
+            mode="step-by-step",
+        )
+        self.assertEqual(result["topic"], "Practice")
+        self.assertNotIn("Give me a harder equation like 2x + 4 = 10", result["followups"])
+        self.assertTrue(
+            any(item.startswith("Show the full working for ") for item in result["followups"])
+        )
+
+    def test_linear_problem_request_routes_as_practice_without_focus_nudge(self):
+        result = answer_question("give me another linear equation", mode="step-by-step")
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Practice")
+        self.assertIn("Answer", result["answer"])
+        self.assertNotIn("Algebra Focus", result["answer"])
+        self.assertTrue(
+            any(item.startswith("Show the full working for ") for item in result["followups"])
+        )
+
+    def test_inline_answer_check_responds_with_feedback(self):
+        examples = [
+            "is x = 3 correct for 2x + 4 = 10",
+            "question: 2x + 4 = 10 answer: x = 3",
+        ]
+
+        for question in examples:
+            with self.subTest(question=question):
+                result = answer_question(question, mode="step-by-step")
+                self.assertEqual(result["subject"], "Math")
+                self.assertEqual(result["topic"], "Answer Checking")
+                self.assertIn("Correct", result["answer"])
+                self.assertNotIn("This algebra workflow supports", result["answer"])
 
     def test_natural_step_request_is_detected_without_mode_field(self):
         result = answer_question("show the full working for 2x + 4 = 10")
@@ -286,6 +367,19 @@ class HomeworkHelperAppTests(unittest.TestCase):
         result = answer_question("solve 2x + 4 = 10", mode="hint")
         self.assertIn("same operation", result["answer"])
         self.assertNotIn("x = 3", result["answer"])
+
+    def test_fractional_equation_hint_does_not_fall_back_to_recorded_steps(self):
+        result = answer_question(
+            "give me a hint for (2x - 7)/3 + (-2x + 4)/6 = 0",
+            mode="hint",
+        )
+        self.assertEqual(result["subject"], "Math")
+        self.assertIn("clear the fractions", result["answer"])
+        self.assertNotIn("Record at least two steps first", result["answer"])
+        self.assertIn(
+            "Show the full working for (2x - 7)/3 + (-2x + 4)/6 = 0",
+            result["followups"],
+        )
 
     def test_incorrect_answer_feedback_is_diagnostic(self):
         payload = evaluate_answer_details("3x + 6 = 15", "9")

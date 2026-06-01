@@ -31,6 +31,7 @@ from engine.algebra_solver import (
     solve_simultaneous,
     sympy_solve_equation,
 )
+from engine.math_answer_checker import evaluate_answer_details
 from engine.lesson_engine import _is_lesson_request, find_lesson_topic, generate_lesson
 from engine.math_practice import guided_response, start_guided_problem
 from utils.formatting import _build_explanation, _format_expression
@@ -145,6 +146,25 @@ def _handle_linear_hint(context):
             why="The goal is to isolate x before doing the final division.",
             next_step=f"After that, divide both sides by {analysis['a_total']}.",
         )
+
+    if "=" in eq and "x" in eq.lower():
+        if "/" in eq:
+            method = "First clear the fractions by multiplying every term by the lowest common denominator."
+            next_step = "After the fractions are removed, collect x terms on one side and constants on the other."
+        elif "x^2" in eq.lower():
+            method = "Move everything to one side so the equation equals zero, then look for factoring or the quadratic formula."
+            next_step = "Check whether the quadratic factorises before using a formula."
+        else:
+            method = "First simplify both sides, then move x terms to one side and constants to the other."
+            next_step = "Keep the same operation on both sides at each step."
+
+        return _build_explanation(
+            answer=f"Hint for {eq}",
+            method=method,
+            why="The goal is to make the equation simpler without changing its solution.",
+            next_step=next_step,
+        )
+
     return None
 
 
@@ -155,6 +175,39 @@ def _handle_harder_problem(context):
         answer=problem["problem"],
         why="This keeps the same skill area but raises the difficulty slightly.",
         next_step="Solve it and submit your answer in the practice panel.",
+    )
+
+
+def _handle_linear_problem(context):
+    problem = generate_problem(level=2, user_id=context.user_id)
+    return _build_explanation(
+        answer=problem["problem"],
+        why="This keeps the practice focused on linear equations.",
+        next_step="Solve it in Practice Mode or ask for a hint if you get stuck.",
+    )
+
+
+def _handle_quadratic_problem(context):
+    problem = None
+    for _ in range(12):
+        candidate = generate_problem(level=3, user_id=context.user_id)
+        if candidate["skill"] == "quadratics":
+            problem = candidate
+            break
+
+    if problem is None:
+        problem = {
+            "problem": random.choice([
+                "2x^2 - 7x + 3 = 0",
+                "3x^2 + 2x - 8 = 0",
+                "4x^2 - 21x + 5 = 0",
+            ]),
+        }
+
+    return _build_explanation(
+        answer=problem["problem"],
+        why="This gives you another factorable quadratic rather than repeating the same solved example.",
+        next_step="Solve for all real roots, then check both values in the original equation.",
     )
 
 
@@ -258,6 +311,22 @@ def _handle_factor_inverse(context):
         method="When you expand the brackets term by term, the combined terms rebuild the original expression.",
         why="A correct factorisation must expand exactly to the starting expression.",
         next_step="Ask me to expand the brackets line by line if you want the proof shown.",
+    )
+
+
+def _handle_balance_explanation(context):
+    return _build_explanation(
+        answer="Each algebra step must preserve the same solution set.",
+        method=(
+            "When solving an equation, apply the same operation to both sides. "
+            "That keeps the two sides balanced while gradually isolating the variable."
+        ),
+        why=(
+            "If you change only one side, the new equation may no longer describe "
+            "the same x-value as the original."
+        ),
+        check="Substitute the final value back into the original equation, not only the last line.",
+        next_step="Use the working space in Practice Mode to check each line of your method.",
     )
 
 
@@ -387,7 +456,62 @@ def _matches_factor_inverse(context):
 
 
 def _matches_generate_problem(context):
-    return context.q_lower == "problem" or "practice problem" in context.q_lower
+    return (
+        context.q_lower == "problem"
+        or "practice problem" in context.q_lower
+        or "another problem" in context.q_lower
+        or "another question" in context.q_lower
+    )
+
+
+def _matches_generate_linear_problem(context):
+    return (
+        "another linear" in context.q_lower
+        or "different linear" in context.q_lower
+        or "new linear" in context.q_lower
+        or "linear equation" in context.q_lower and "another" in context.q_lower
+        or "linear equation" in context.q_lower and "different" in context.q_lower
+        or "linear equation" in context.q_lower and "new" in context.q_lower
+    )
+
+
+def _matches_generate_quadratic_problem(context):
+    return (
+        "another quadratic" in context.q_lower
+        or "different quadratic" in context.q_lower
+        or "new quadratic" in context.q_lower
+        or "quadratic" in context.q_lower and "another" in context.q_lower
+        or "quadratic" in context.q_lower and "different" in context.q_lower
+        or "quadratic" in context.q_lower and "new" in context.q_lower
+    )
+
+
+def _extract_inline_answer_check(text):
+    """Extract equation and submitted answer from natural answer-check prompts."""
+    original = str(text or "").strip()
+    patterns = [
+        r"(?i)^\s*(?:question|equation)\s*:\s*(?P<equation>.+?)\s+(?:answer|my answer)\s*:\s*(?P<answer>.+?)\s*$",
+        r"(?i)^\s*(?:my\s+answer\s+is|answer\s+is)\s+(?P<answer>.+?)\s+(?:for|to|in)\s+(?P<equation>.+?)\s*$",
+        r"(?i)^\s*check\s+my\s+answer\s+(?P<answer>.+?)\s+(?:for|to|in)\s+(?P<equation>.+?)\s*$",
+        r"(?i)^\s*check\s+(?:if\s+)?(?P<answer>x\s*=.+?)\s+(?:for|to|in)\s+(?P<equation>.+?)\s*$",
+        r"(?i)^\s*is\s+(?P<answer>.+?)\s+correct\s+(?:for|in)\s+(?P<equation>.+?)\s*$",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, original)
+        if not match:
+            continue
+
+        equation = match.group("equation").strip(" .?")
+        answer = match.group("answer").strip(" .?")
+        if equation and answer and "=" in equation:
+            return equation, answer
+
+    return None
+
+
+def _matches_inline_answer_check(context):
+    return _extract_inline_answer_check(context.original) is not None
 
 
 def _matches_solve_simultaneous(context):
@@ -416,6 +540,27 @@ def _matches_linear_graph_form(context):
         or re.search(r"\by\s*=\s*mx\s*[+\-]\s*c\b", context.q_lower)
         or re.search(r"\bmx\s*[+\-]\s*c\b", context.q_lower)
     )
+
+
+def _matches_balance_explanation(context):
+    return (
+        "balanced" in context.q_lower
+        and ("equation" in context.q_lower or "step" in context.q_lower)
+    ) or "why each step keeps" in context.q_lower
+
+
+def _handle_inline_answer_check(context):
+    extracted = _extract_inline_answer_check(context.original)
+    if extracted is None:
+        return None
+
+    equation, submitted_answer = extracted
+    result = evaluate_answer_details(
+        equation,
+        submitted_answer,
+        user_id=context.user_id,
+    )
+    return result["details"]
 
 
 def _matches_solve_linear(context):
@@ -447,6 +592,18 @@ MATH_INTENTS = (
         topic="Practice",
         matcher=_contains("give me a harder equation like"),
         handler=_handle_harder_problem,
+    ),
+    MathIntent(
+        name="generate_problem_linear",
+        topic="Practice",
+        matcher=_matches_generate_linear_problem,
+        handler=_handle_linear_problem,
+    ),
+    MathIntent(
+        name="generate_problem_quadratic",
+        topic="Practice",
+        matcher=_matches_generate_quadratic_problem,
+        handler=_handle_quadratic_problem,
     ),
     MathIntent(
         name="generate_problem_similar",
@@ -491,6 +648,12 @@ MATH_INTENTS = (
         handler=_handle_factor_inverse,
     ),
     MathIntent(
+        name="explain_balance",
+        topic="Linear Equations",
+        matcher=_matches_balance_explanation,
+        handler=_handle_balance_explanation,
+    ),
+    MathIntent(
         name="show_steps",
         topic="Validation",
         matcher=_contains("show steps"),
@@ -521,16 +684,22 @@ MATH_INTENTS = (
         handler=_handle_recorded_step_hint,
     ),
     MathIntent(
-        name="check_expressions",
+        name="check_answer_inline",
         topic="Answer Checking",
-        matcher=_starts_with("check "),
-        handler=_handle_check_expressions,
+        matcher=_matches_inline_answer_check,
+        handler=_handle_inline_answer_check,
     ),
     MathIntent(
         name="check_answer",
         topic="Answer Checking",
         matcher=_contains("check my answer for"),
         handler=_handle_check_answer_guidance,
+    ),
+    MathIntent(
+        name="check_expressions",
+        topic="Answer Checking",
+        matcher=_starts_with("check "),
+        handler=_handle_check_expressions,
     ),
     MathIntent(
         name="guided_problem",
