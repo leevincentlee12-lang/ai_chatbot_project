@@ -1,58 +1,76 @@
 # Adaptive Algebra Learning Platform
 
-A Flask-based educational platform for guided algebra learning, structured
+A deployed Flask educational platform for guided algebra learning, structured
 practice, answer checking, lessons, and progress tracking.
 
 Public demo: https://ai-chatbot-project-tlou.onrender.com
 
-## Overview
+## Project Purpose
 
-This project began as a homework helper and has been refactored into a modular
-algebra learning platform. It focuses on explainable educational behaviour:
-students can ask algebra questions, receive structured responses, practise
-generated problems, check answers, and review progress over time.
+This project was built to support algebra revision, homework, and independent
+practice. It focuses on helping students understand the method behind an
+answer, not only receiving the final result.
 
-The system is strongest in algebra. It is not intended to replace a teacher or
-cover every school subject in depth.
+The platform is strongest in algebra. It is not intended to replace a teacher
+or compete with general-purpose AI systems. Its purpose is to provide a focused
+learning environment for supported mathematics tasks.
 
-## Educational Purpose
+## Key Features
 
-The goal is to support active learning rather than only giving final answers.
-Responses are designed to show:
+- Step-by-step algebra explanations
+- Hint Mode for independent thinking before full support
+- Direct answer mode for quick checking
+- Practice Mode with generated algebra problems
+- Answer checking with feedback for correct and incorrect answers
+- Working-space validation for student steps
+- Lesson pages with examples, common mistakes, and practice prompts
+- Progress tracking with accuracy, difficulty, skill scores, and recent activity
+- Lightweight session memory using Flask sessions and SQLite-backed state
+- Clean error handling for malformed equations and unsupported input
 
-- the answer
-- the method
-- why the method works
-- how to check the result
-- a sensible next step
+## Supported Algebra Areas
 
-The platform also records learning context such as recent questions, current
-topic, active practice problem, current lesson, mistakes, difficulty level, and
-skill progression.
+- Linear equations
+- Quadratic equations
+- Factoring
+- Simplifying expressions
+- Ratios
+- Simultaneous equations
+- Selected trigonometry-style algebra questions
+- Generated practice problems at different difficulty levels
 
-## Features
+## Teacher Feedback
 
-- Deterministic math intent routing for requests such as `solve_linear`,
-  `solve_quadratic`, `factor_expression`, `simplify_expression`,
-  `solve_simultaneous`, `validate_steps`, `generate_hint`, and
-  `generate_problem`.
-- Algebra solving for linear equations, quadratic equations, factoring,
-  simplifying expressions, simultaneous equations, ratios, and selected
-  trigonometry-style algebra questions.
-- Practice mode with generated problems, answer input, instant feedback, retry
-  support, and progression updates.
-- Lesson pages with summaries, core ideas, key points, worked examples, common
-  mistakes, and practice prompts.
-- Progress page showing accuracy, skill scores, strongest and weakest skills,
-  difficulty level, and recent activity.
-- Lightweight session memory using a Flask session ID plus SQLite-backed
-  learning state.
-- Clean educational error messages for malformed equations, parser failures,
-  empty input, and unsupported operations.
+Teacher feedback indicated that the mathematical reasoning appeared accurate,
+the algebraic methods were appropriate, and the step-by-step explanations were
+clear and easy to follow.
+
+The feedback also identified three useful directions for improvement:
+
+- Add stronger feedback for common mistakes
+- Add more visual representations, such as graphs
+- Increase the variety of question difficulty
+
+These points now guide the next development priorities for the project.
+
+## Screenshots
+
+| Section | Screenshot |
+| --- | --- |
+| Homepage | ![Homepage](static/screenshots/homepage.png) |
+| Solving Equations | ![Solving equations](static/screenshots/solving-equations.png) |
+| Practice Mode | ![Practice mode](static/screenshots/practice-mode.png) |
+| Lessons Page | ![Lessons page](static/screenshots/lessons-page.png) |
+| Progress Dashboard | ![Dashboard](static/screenshots/dashboard.png) |
+| Architecture | ![Architecture](static/screenshots/architecture.png) |
+
+Additional demo screenshots:
+
+- ![Hard equation demo](static/screenshots/demo-hard-equation.png)
+- ![Wrong answer feedback demo](static/screenshots/demo-wrong-answer-feedback.png)
+- ![Practice progress demo](static/screenshots/demo-practice-progress.png)
 
 ## Architecture
-
-### Learning Flow
 
 ```text
 User Input
@@ -63,37 +81,31 @@ User Input
   -> Progress Tracking
 ```
 
-The router decides which part of the system should handle the request. The
-subject engine runs the relevant learning workflow, the solver handles supported
-algebra operations, the feedback generator formats the response clearly, and
-progress tracking records activity for the student dashboard.
+The project is separated into modules so the system is easier to maintain and
+extend.
 
 ```text
 app.py
-  Flask routes, request validation, pages, APIs, and anonymous session IDs
+  Flask routes, pages, JSON endpoints, sessions, and request handling
 
 homework_helper.py
   Compatibility wrapper for older imports
 
 core/
-  classification, parsing, validation, progression, session memory, and state
+  Classification, parsing, validation, progression, session memory, and state
 
 engine/
-  algebra solving, practice workflows, lesson logic, and subject engines
+  Algebra solving, practice workflows, lessons, and subject handlers
 
 data/
-  constants, lesson content, and intent definitions
+  Constants, lesson content, and intent definitions
 
 utils/
-  shared response formatting helpers
+  Shared formatting helpers
 
 templates/ and static/
-  frontend pages, CSS, JavaScript, and favicon
+  Frontend pages, CSS, JavaScript, screenshots, and favicon
 ```
-
-Learning state is stored in SQLite under `instance/homework_helper.sqlite3` by
-default. Flask sessions store only a small anonymous user ID and lightweight
-browser-session context.
 
 ## Technologies Used
 
@@ -104,39 +116,26 @@ browser-session context.
 - HTML, CSS, and JavaScript
 - Gunicorn
 - Render
-- GitHub / GitHub Desktop
+- GitHub and GitHub Desktop
 
-## Screenshots
+## Testing
 
-Use a consistent browser size, light theme, and clean sample algebra questions.
-Save final screenshots in:
+The project includes regression tests for routing, algebra solving, answer
+checking, progression, lessons, frontend routes, and parser edge cases.
+
+Current local verification:
+
+```powershell
+python -m unittest discover -s tests
+```
+
+Latest test run:
 
 ```text
-static/screenshots/
+64 tests passed
 ```
 
-Recommended screenshot set:
-
-| Section | Placeholder file | What the screenshot should show |
-| --- | --- | --- |
-| Homepage | `static/screenshots/homepage.png` | Project title, overview, main input area, quick actions, and dashboard panel. |
-| Solving Equations | `static/screenshots/solving-equations.png` | A solved algebra question with answer, method, why, check, and next step sections. |
-| Practice Mode | `static/screenshots/practice-mode.png` | Generated problem, answer field, feedback message, retry controls, and practice stats. |
-| Lessons Page | `static/screenshots/lessons-page.png` | A lesson topic with summary, core idea, key points, worked example, and practice prompts. |
-| Dashboard | `static/screenshots/dashboard.png` | Accuracy, skill scores, strongest and weakest skill, difficulty, and recent activity. |
-| Deployment | `static/screenshots/deployment.png` | Render service page or public deployed site URL showing the project is live. |
-| Architecture | `static/screenshots/architecture.png` | About page architecture flow from user input to progress tracking. |
-
-After adding the files, use Markdown image links like:
-
-```markdown
-![Homepage](static/screenshots/homepage.png)
-```
-
-Avoid screenshots with personal information, browser notifications, unrelated
-tabs, debug logs, or empty loading states.
-
-## Setup Instructions
+## Setup
 
 1. Clone the repository.
 
@@ -164,7 +163,7 @@ python -m pip install -r requirements.txt
 python -m unittest discover -s tests
 ```
 
-5. Start the Flask app locally.
+5. Start the app locally.
 
 ```powershell
 python app.py
@@ -178,7 +177,7 @@ http://127.0.0.1:5000
 
 ## Deployment
 
-The project is deployed on Render as a Flask web service.
+The project is deployed publicly on Render.
 
 Render build command:
 
@@ -197,9 +196,9 @@ a pause can take longer.
 
 ## Future Improvements
 
-- Add user accounts only if long-term individual progress is needed.
-- Move production learning data to a hosted database.
-- Expand algebra coverage with more problem generators.
-- Add teacher-facing summaries after the student data model is stable.
-- Add screenshots and a short demo video for presentation.
-- Continue increasing tests around parser edge cases and intent routing.
+- Add graph visuals for linear and quadratic equations
+- Improve common mistake detection and feedback
+- Add more Year 10 and Year 11 style question generators
+- Add teacher-facing summaries after the learning data model is more mature
+- Move long-term learning data to a hosted production database if needed
+- Add user accounts only if persistent individual progress becomes necessary
