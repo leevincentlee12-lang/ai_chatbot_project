@@ -7,6 +7,19 @@ implementation is now user-scoped and backed by `core.state_store`.
 
 import random
 
+from core.adaptive import (
+    build_learning_dashboard,
+    build_recommendation,
+    choose_adaptive_level,
+    choose_focus_skill,
+    format_skill_label,
+    mastery_delta,
+    personalise_hint,
+)
+from core.misconceptions import (
+    ranked_misconceptions,
+    targeted_recommendations,
+)
 from core import state_store
 
 
@@ -58,6 +71,21 @@ def get_recent_questions(user_id=None, limit=10):
 def get_mistake_history(user_id=None, limit=10):
     """Return recent answer mistakes for this user."""
     return state_store.get_mistakes(user_id, limit=limit)
+
+
+def get_misconception_counts(user_id=None):
+    """Return structured misconception counts for this user."""
+    return state_store.get_misconception_counts(user_id)
+
+
+def get_learning_events(user_id=None, limit=50):
+    """Return recent learning events for this user."""
+    return state_store.get_learning_events(user_id, limit=limit)
+
+
+def get_mastery_history(user_id=None, limit=100):
+    """Return recent mastery score snapshots for this user."""
+    return state_store.get_mastery_history(user_id, limit=limit)
 
 
 def get_student_steps(user_id=None):
@@ -152,12 +180,53 @@ def record_mistake(
     )
 
 
+def record_misconception(misconception_id, user_id=None):
+    """Increment a structured misconception count for future adaptation."""
+    count = state_store.record_misconception(user_id, misconception_id)
+    _refresh_legacy_state()
+    return count
+
+
+def record_learning_event(
+    event_type,
+    skill=None,
+    topic=None,
+    detail=None,
+    user_id=None,
+):
+    """Record a lightweight learning event for history and analytics."""
+    state_store.add_learning_event(
+        user_id,
+        event_type,
+        skill=skill,
+        topic=topic,
+        detail=detail,
+    )
+
+
+def record_hint_used(skill=None, topic=None, detail=None, user_id=None):
+    """Record hint usage without changing mastery by itself."""
+    record_learning_event(
+        "hint_used",
+        skill=skill,
+        topic=topic,
+        detail=detail,
+        user_id=user_id,
+    )
+
+
 def detect_math_skill(question):
     """Infer the targeted maths skill from a question string."""
     q_lower = (question or "").lower()
 
+    if "(" in q_lower and ")" in q_lower and "x" in q_lower:
+        return "expanding_brackets"
+
     if "x^2" in q_lower or "quadratic" in q_lower:
         return "quadratics"
+
+    if "simplify" in q_lower or "like terms" in q_lower:
+        return "simplifying_expressions"
 
     if "/" in q_lower and "x" in q_lower:
         return "rational_equations"
@@ -195,7 +264,7 @@ def update_skill(skill, correct, user_id=None):
 
     return adjust_skill(
         skill,
-        score_delta=10 if correct else -5,
+        score_delta=mastery_delta(correct),
         attempt_delta=1,
         user_id=user_id,
     )
@@ -239,8 +308,8 @@ def update_progression(correct, user_id=None):
         _refresh_legacy_state()
         return None
 
-    if correct_streak >= 3:
-        difficulty += 1
+    if correct_streak >= 5:
+        difficulty = min(3, difficulty + 1)
         correct_streak = 0
         state_store.update_profile(
             user_id,
@@ -383,7 +452,7 @@ def _generate_parentheses_linear_problem(ranges):
     outside_term = _signed_number(outside_constant) if outside_constant else ""
 
     return {
-        "skill": "linear_equations",
+        "skill": "expanding_brackets",
         "problem": (
             f"{multiplier}(x{_signed_number(shift)})"
             f"{outside_term} = {result}"
@@ -548,18 +617,125 @@ def generate_problem(level=None, user_id=None):
     return problem_data
 
 
-def generate_adaptive_problem(user_id=None):
-    """Generate a practice problem targeting the weakest mastery score."""
-    skills = get_student_skills(user_id)
-    if not skills:
-        return generate_problem(get_difficulty(user_id), user_id=user_id)
+def _generate_combining_terms_linear_problem(ranges):
+    """Generate a linear equation that requires combining like terms."""
+    solution = random.randint(*ranges["x_range"])
+    first_coefficient = _random_nonzero(-9, 9)
+    second_coefficient = _random_nonzero(-9, 9)
+    while first_coefficient + second_coefficient == 0:
+        second_coefficient = _random_nonzero(-9, 9)
+    constant = random.randint(*ranges["b_range"])
+    result = (first_coefficient + second_coefficient) * solution + constant
 
-    weakest_skill = min(
-        skills.items(),
-        key=lambda item: item[1]["score"],
-    )[0]
-    set_current_topic(weakest_skill, user_id=user_id)
-    return generate_problem(get_difficulty(user_id), user_id=user_id)
+    return {
+        "skill": "simplifying_expressions",
+        "problem": (
+            f"{_first_linear_term(first_coefficient)}"
+            f"{_signed_term(second_coefficient, 'x')}"
+            f"{_signed_term(constant, '')} = {result}"
+        ),
+        "solution": solution,
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_problem_for_skill(skill, level, ranges):
+    """Generate a practice problem for a selected skill when supported."""
+    if skill == "quadratics":
+        if level >= 3:
+            return _generate_non_monic_quadratic_problem(ranges)
+        return _generate_quadratic_problem(ranges)
+
+    if skill == "rational_equations":
+        return _generate_rational_equation_problem(ranges)
+
+    if skill == "expanding_brackets":
+        return _generate_parentheses_linear_problem(ranges)
+
+    if skill == "simplifying_expressions":
+        return _generate_combining_terms_linear_problem(ranges)
+
+    if skill == "factoring":
+        return _generate_quadratic_problem(ranges)
+
+    if skill == "linear_equations":
+        if level <= 1:
+            return _generate_basic_linear_problem(ranges)
+        if level == 2:
+            return _generate_two_sided_linear_problem(ranges)
+        return _generate_fractional_linear_problem(ranges)
+
+    return generate_problem(level=level)
+
+
+def _recent_problem_texts(user_id=None):
+    return {
+        item.get("question")
+        for item in get_recent_questions(user_id, limit=20)
+        if item.get("mode") == "practice" and item.get("question")
+    }
+
+
+def _record_generated_problem(problem_data, reason, user_id=None):
+    state_store.add_recent_question(
+        user_id,
+        problem_data["problem"],
+        subject="Math",
+        topic=format_skill_label(problem_data["skill"]),
+        mode="practice",
+    )
+    record_learning_event(
+        "problem_generated",
+        skill=problem_data["skill"],
+        topic=format_skill_label(problem_data["skill"]),
+        detail=reason,
+        user_id=user_id,
+    )
+
+
+def generate_adaptive_problem(user_id=None, requested_level=None):
+    """Generate a practice problem based on mastery and misconception history."""
+    profile = get_student_profile(user_id)
+    skills = profile.get("skills", {})
+    misconception_summary = ranked_misconceptions(get_misconception_counts(user_id))
+    focus = choose_focus_skill(skills, misconception_summary)
+    level = choose_adaptive_level(
+        focus["skill"],
+        skills,
+        current_difficulty=profile.get("difficulty", 1),
+        requested_level=requested_level,
+    )
+    ranges = _difficulty_ranges(level)
+    recent_problems = _recent_problem_texts(user_id)
+
+    problem_data = None
+    for _ in range(12):
+        candidate = _generate_problem_for_skill(focus["skill"], level, ranges)
+        if candidate["problem"] not in recent_problems:
+            problem_data = candidate
+            break
+
+    if problem_data is None:
+        problem_data = _generate_problem_for_skill(focus["skill"], level, ranges)
+
+    problem_data["adaptive_focus"] = focus["topic"]
+    problem_data["adaptive_reason"] = focus["reason"]
+    set_current_topic(problem_data["skill"], user_id=user_id)
+    _record_generated_problem(problem_data, focus["reason"], user_id=user_id)
+    return problem_data
+
+
+def get_personalised_recommendation(user_id=None):
+    """Return the current recommendation for what the student should do next."""
+    skills = get_student_skills(user_id)
+    misconception_summary = ranked_misconceptions(get_misconception_counts(user_id))
+    return build_recommendation(skills, misconception_summary)
+
+
+def personalise_hint_for_user(base_hint, user_id=None):
+    """Add adaptive context to a hint when repeated mistakes justify it."""
+    misconception_summary = ranked_misconceptions(get_misconception_counts(user_id))
+    return personalise_hint(base_hint, misconception_summary)
 
 
 def get_learning_state(user_id=None):
@@ -568,14 +744,41 @@ def get_learning_state(user_id=None):
     stats = get_student_stats(user_id)
     recent_questions = get_recent_questions(user_id, limit=10)
     mistakes = get_mistake_history(user_id, limit=10)
+    misconception_counts = get_misconception_counts(user_id)
+    misconception_summary = ranked_misconceptions(misconception_counts)
+    repeated_recommendations = targeted_recommendations(misconception_counts)
+    mastery_history = get_mastery_history(user_id, limit=100)
+    learning_events = get_learning_events(user_id, limit=100)
+    recommendation = build_recommendation(profile["skills"], misconception_summary)
+    dashboard = build_learning_dashboard(
+        profile,
+        stats,
+        recent_questions,
+        mistakes,
+        misconception_summary,
+        mastery_history,
+        learning_events,
+    )
     return {
         "current_topic": profile["current_topic"],
         "recent_question": recent_questions[0] if recent_questions else None,
         "recent_questions": recent_questions,
         "skill_progression": profile["skills"],
+        "mastery_by_topic": profile["skills"],
+        "overall_mastery": dashboard["overall_mastery"],
         "difficulty_level": profile["difficulty"],
         "correct_streak": profile["correct_streak"],
         "recent_mistakes": mistakes,
         "mistake_history": mistakes,
+        "mastery_history": mastery_history,
+        "learning_events": learning_events,
+        "misconceptions": misconception_counts,
+        "misconception_summary": misconception_summary,
+        "most_common_misconception": (
+            misconception_summary[0] if misconception_summary else None
+        ),
+        "misconception_recommendations": repeated_recommendations,
+        "recommendation": recommendation,
+        "dashboard": dashboard,
         "stats": stats,
     }

@@ -7,14 +7,19 @@ from core.parser import (
     _extract_numeric_answer,
     has_obvious_malformed_math_input,
 )
+from core.misconceptions import detect_misconception
 from core.progression import (
     adjust_skill,
     detect_math_skill,
+    get_personalised_recommendation,
+    record_learning_event,
+    record_misconception,
     record_mistake,
     record_correct_answer,
     record_problem_attempt,
     update_progression,
 )
+from core.adaptive import mastery_delta
 from engine.algebra_solver import _parse_linear_equation, solve_values
 from utils.formatting import (
     _compose_message,
@@ -196,16 +201,31 @@ def evaluate_answer_details(eq, student_answer, user_id=None):
 
     skill = detect_math_skill(eq) or "linear_equations"
     correct_text = _format_solution_set(correct_values)
+    record_learning_event(
+        "problem_attempted",
+        skill=skill,
+        topic=_format_skill_label(skill),
+        detail=eq,
+        user_id=user_id,
+    )
 
     if _values_match(correct_values, student_values):
         skill_data = adjust_skill(
             skill,
-            score_delta=5,
+            score_delta=mastery_delta(True),
             attempt_delta=1,
             user_id=user_id,
         )
         record_correct_answer(user_id=user_id)
+        record_learning_event(
+            "answer_correct",
+            skill=skill,
+            topic=_format_skill_label(skill),
+            detail=eq,
+            user_id=user_id,
+        )
         level_message = update_progression(True, user_id=user_id)
+        recommendation = get_personalised_recommendation(user_id)
 
         details = _compose_message(
             _section("Result", f"Correct. {correct_text}"),
@@ -221,29 +241,74 @@ def evaluate_answer_details(eq, student_answer, user_id=None):
                 "Next Step",
                 level_message or "Try the next problem without checking the method first.",
             ),
+            _section(
+                "Recommended Practice",
+                f"{recommendation['title']}\nReason: {recommendation['reason']}",
+            ),
         )
         return {
             "status": "correct",
             "headline": "Correct",
             "result": f"Correct. {correct_text}",
             "details": details,
+            "recommendation": recommendation,
             "next_steps": [
+                recommendation["title"],
                 f"Give me a harder equation like {eq}",
                 f"Show the full working for {eq}",
             ],
         }
 
-    skill_data = adjust_skill(
-        skill,
-        score_delta=-3,
-        attempt_delta=1,
-        user_id=user_id,
-    )
-    update_progression(False, user_id=user_id)
     if len(correct_values) == 1 and len(student_values) == 1:
         diagnosis = _diagnose_linear_answer(eq, student_values[0], correct_values[0])
     else:
         diagnosis = _diagnose_solution_set_answer(correct_values, student_values)
+
+    misconception = detect_misconception(
+        eq,
+        student_answer,
+        correct_values,
+    )
+    misconception_section = None
+    if misconception is not None:
+        misconception_count = record_misconception(
+            misconception["id"],
+            user_id=user_id,
+        )
+        misconception["count"] = misconception_count
+
+        misconception_text = (
+            f"{misconception['label']}: {misconception['explanation']}\n"
+            f"Recommendation: {misconception['recommendation']}"
+        )
+        if misconception_count >= 2:
+            misconception_text += (
+                f"\nThis has appeared {misconception_count} times, so targeted "
+                f"practice on {misconception['practice_area'].lower()} would be useful."
+            )
+        misconception_section = _section(
+            "Misconception Detected",
+            misconception_text,
+        )
+
+    skill_data = adjust_skill(
+        skill,
+        score_delta=mastery_delta(
+            False,
+            misconception_count=misconception.get("count", 0) if misconception else 0,
+        ),
+        attempt_delta=1,
+        user_id=user_id,
+    )
+    record_learning_event(
+        "answer_incorrect",
+        skill=skill,
+        topic=_format_skill_label(skill),
+        detail=misconception["id"] if misconception else eq,
+        user_id=user_id,
+    )
+    update_progression(False, user_id=user_id)
+    recommendation = get_personalised_recommendation(user_id)
 
     record_mistake(
         skill=skill,
@@ -253,25 +318,44 @@ def evaluate_answer_details(eq, student_answer, user_id=None):
         issue=diagnosis["issue"],
         user_id=user_id,
     )
-    details = _compose_message(
+    sections = [
         _section("Result", f"Not correct yet. The correct answer is {correct_text}"),
         _section("Likely Issue", diagnosis["issue"]),
         _section("How To Fix It", diagnosis["fix"]),
+    ]
+    if misconception_section:
+        sections.append(misconception_section)
+    sections.extend([
         _section(
             "Mastery",
             f"{_format_skill_label(skill)}: {skill_data['score']}/100",
         ),
         _section("Next Step", diagnosis["next_step"]),
-    )
+        _section(
+            "Recommended Practice",
+            f"{recommendation['title']}\nReason: {recommendation['reason']}",
+        ),
+    ])
+    details = _compose_message(*sections)
+    next_steps = [
+        recommendation["title"],
+        f"Give me a similar problem to {eq}",
+        f"Show the full working for {eq}",
+    ]
+    if misconception is not None and misconception.get("count", 0) >= 2:
+        next_steps.insert(
+            0,
+            f"Practise {misconception['practice_area'].lower()}",
+        )
+
     return {
         "status": "incorrect",
         "headline": "Not Yet",
         "result": f"Incorrect. Correct answer: {correct_text}",
         "details": details,
-        "next_steps": [
-            f"Give me a similar problem to {eq}",
-            f"Show the full working for {eq}",
-        ],
+        "next_steps": next_steps,
+        "misconception": misconception,
+        "recommendation": recommendation,
     }
 
 

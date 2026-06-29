@@ -18,8 +18,8 @@ from core.session_memory import (
 from homework_helper import (
     answer_question,
     evaluate_answer_details,
+    generate_adaptive_problem,
     generate_lesson,
-    generate_problem,
     get_learning_state,
     get_student_skills,
     get_student_stats,
@@ -309,12 +309,17 @@ def analytics():
 
 @app.route("/practice/<int:level>")
 def practice(level):
-    problem = generate_problem(level, user_id=_current_user_id())
+    problem = generate_adaptive_problem(
+        user_id=_current_user_id(),
+        requested_level=level,
+    )
     remember_active_practice_problem(session, problem, level=level)
     return jsonify({
         "skill": problem["skill"],
         "problem": problem["problem"],
         "difficulty": problem["difficulty"],
+        "adaptive_focus": problem.get("adaptive_focus"),
+        "adaptive_reason": problem.get("adaptive_reason"),
     })
 
 

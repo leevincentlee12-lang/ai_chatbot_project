@@ -743,6 +743,45 @@ select:focus {
     line-height: 1.5;
 }
 
+.misconception-list {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.misconception-card {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel-bg);
+    padding: 14px;
+}
+
+.misconception-card-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.misconception-card-header span,
+.misconception-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.misconception-card p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.misconception-recommendation {
+    color: var(--ink);
+    font-weight: 700;
+}
+
 .lesson-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));

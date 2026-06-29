@@ -57,6 +57,10 @@
 
         <div class="student-dashboard progress-summary-grid">
           <article class="metric-card">
+            <span>Overall mastery</span>
+            <strong id="progressOverallMastery">Loading...</strong>
+          </article>
+          <article class="metric-card">
             <span>Accuracy</span>
             <strong id="progressAccuracy">Loading...</strong>
           </article>
@@ -88,6 +92,26 @@
             <span>Correct streak</span>
             <strong id="progressStreak">Loading...</strong>
           </article>
+          <article class="metric-card">
+            <span>Most common mistake</span>
+            <strong id="progressCommonMistake">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Targeted practice</span>
+            <strong id="progressTargetedPractice">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Recent improvement</span>
+            <strong id="progressRecentImprovement">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Hint usage</span>
+            <strong id="progressHintUsage">Loading...</strong>
+          </article>
+          <article class="metric-card">
+            <span>Current focus</span>
+            <strong id="progressFocusArea">Loading...</strong>
+          </article>
         </div>
       </section>
 
@@ -111,6 +135,16 @@
             <div class="status-card">Loading recent activity...</div>
           </div>
         </aside>
+      </section>
+
+      <section class="section-block">
+        <div class="section-heading">
+          <h2>Misconception Tracking</h2>
+          <p>Repeated mistake patterns are counted only when the answer checker detects a clear rule-based pattern.</p>
+        </div>
+        <div id="misconceptionList" class="misconception-list">
+          <div class="status-card">Loading misconception data...</div>
+        </div>
       </section>
     </main>
   </div>

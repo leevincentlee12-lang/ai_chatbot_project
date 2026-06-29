@@ -27,6 +27,7 @@ const SECTION_LABELS = new Map([
   ["check", "Check"],
   ["likely issue", "Check"],
   ["mastery", "Progress"],
+  ["recommended practice", "Next Step"],
   ["next step", "Next Step"],
 ]);
 
@@ -152,7 +153,10 @@ function setFeedback(text, status = "") {
 function setProblem(data) {
   currentProblem = data.problem;
   lastResult = null;
-  problemBox.textContent = `${data.difficulty} ${formatSkillLabel(data.skill)}\n${data.problem}`;
+  const reason = data.adaptive_reason
+    ? `\nFocus: ${data.adaptive_focus || formatSkillLabel(data.skill)}\nReason: ${data.adaptive_reason}`
+    : "";
+  problemBox.textContent = `${data.difficulty} ${formatSkillLabel(data.skill)}\n${data.problem}${reason}`;
   workingInput.value = "";
   answerInput.value = "";
   answerInput.disabled = false;

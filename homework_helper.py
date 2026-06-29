@@ -1,9 +1,12 @@
 """Backward-compatible entry point for the modular tutoring system."""
 
 from core import classifier as _classifier
+from core import adaptive as _adaptive
+from core import misconceptions as _misconceptions
 from core import parser as _parser
 from core import progression as _progression
 from core import router as _router
+from core import teacher_view as _teacher_view
 from core import validator as _validator
 from data import constants as _constants
 from engine import english_engine as _english
@@ -44,6 +47,26 @@ _EXPORTS = {
         "_equation_to_expression",
         "_extract_numeric_answer",
     },
+    _adaptive: {
+        "build_learning_dashboard",
+        "build_recommendation",
+        "choose_adaptive_level",
+        "choose_focus_skill",
+        "clamp_mastery",
+        "format_skill_label",
+        "mastery_delta",
+        "overall_mastery",
+        "personalise_hint",
+        "strongest_skill",
+        "weakest_skill",
+    },
+    _misconceptions: {
+        "MISCONCEPTIONS",
+        "detect_misconception",
+        "get_misconception_definition",
+        "ranked_misconceptions",
+        "targeted_recommendations",
+    },
     _progression: {
         "student_stats",
         "student_profile",
@@ -59,7 +82,11 @@ _EXPORTS = {
         "get_difficulty",
         "get_guided_session",
         "get_learning_state",
+        "get_learning_events",
+        "get_mastery_history",
+        "get_misconception_counts",
         "get_mistake_history",
+        "get_personalised_recommendation",
         "get_recent_questions",
         "get_or_create_skill",
         "get_student_profile",
@@ -67,6 +94,9 @@ _EXPORTS = {
         "get_student_steps",
         "get_student_stats",
         "record_mistake",
+        "record_misconception",
+        "record_learning_event",
+        "record_hint_used",
         "record_correct_answer",
         "record_lesson_completed",
         "record_problem_attempt",
@@ -78,6 +108,9 @@ _EXPORTS = {
         "update_progression",
         "update_skill",
         "_clamp_score",
+    },
+    _teacher_view: {
+        "build_teacher_snapshot",
     },
     _router: {
         "academic_engine",

@@ -18,6 +18,7 @@ from core.parser import (
 from core.progression import (
     append_student_step,
     clear_student_steps,
+    generate_adaptive_problem,
     generate_problem,
     get_difficulty,
     get_student_steps,
@@ -387,8 +388,12 @@ def _handle_guided_answer(context):
 
 
 def _handle_generate_problem(context):
-    problem = generate_problem(user_id=context.user_id)
-    return f"Practice problem: {problem['problem']}"
+    problem = generate_adaptive_problem(user_id=context.user_id)
+    return _build_explanation(
+        answer=problem["problem"],
+        why=problem.get("adaptive_reason", "This problem matches your current practice profile."),
+        next_step="Solve it in Practice Mode or submit your answer for checking.",
+    )
 
 
 def _handle_factor_expression(context):

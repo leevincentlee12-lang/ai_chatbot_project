@@ -1,4 +1,5 @@
 const summary = {
+  overallMastery: document.getElementById("progressOverallMastery"),
   accuracy: document.getElementById("progressAccuracy"),
   difficulty: document.getElementById("progressDifficulty"),
   strongest: document.getElementById("progressStrongest"),
@@ -7,10 +8,16 @@ const summary = {
   correct: document.getElementById("progressCorrect"),
   questions: document.getElementById("progressQuestions"),
   streak: document.getElementById("progressStreak"),
+  commonMistake: document.getElementById("progressCommonMistake"),
+  targetedPractice: document.getElementById("progressTargetedPractice"),
+  recentImprovement: document.getElementById("progressRecentImprovement"),
+  hintUsage: document.getElementById("progressHintUsage"),
+  focusArea: document.getElementById("progressFocusArea"),
 };
 
 const skillScoreList = document.getElementById("skillScoreList");
 const recentActivityList = document.getElementById("recentActivityList");
+const misconceptionList = document.getElementById("misconceptionList");
 const refreshButton = document.getElementById("refreshProgressPage");
 
 async function fetchJson(url) {
@@ -163,6 +170,48 @@ function renderRecentActivity(items = []) {
   });
 }
 
+function renderMisconceptions(items = []) {
+  misconceptionList.innerHTML = "";
+
+  if (items.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "status-card";
+    empty.textContent = "No repeated misconceptions detected yet.";
+    misconceptionList.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "misconception-card";
+
+    const header = document.createElement("div");
+    header.className = "misconception-card-header";
+
+    const title = document.createElement("strong");
+    title.textContent = item.label || formatSkillLabel(item.id);
+
+    const count = document.createElement("span");
+    count.textContent = `${Number(item.count || 0)} detected`;
+
+    const explanation = document.createElement("p");
+    explanation.textContent = item.explanation || "";
+
+    const recommendation = document.createElement("p");
+    recommendation.className = "misconception-recommendation";
+    recommendation.textContent = Number(item.count || 0) >= 2
+      ? `Targeted practice: ${item.practice_area}. ${item.recommendation}`
+      : "Detected once. Keep practising and check whether this pattern repeats.";
+
+    header.appendChild(title);
+    header.appendChild(count);
+    card.appendChild(header);
+    card.appendChild(explanation);
+    card.appendChild(recommendation);
+    misconceptionList.appendChild(card);
+  });
+}
+
 function renderProgress(state) {
   const stats = state.stats || {};
   const attempted = Number(stats.problems_attempted || 0);
@@ -171,7 +220,12 @@ function renderProgress(state) {
     ? Math.round((correct / attempted) * 10000) / 100
     : 0;
   const skillEntries = getSkillEntries(state.skill_progression || {});
+  const commonMistake = state.most_common_misconception;
+  const recommendations = state.misconception_recommendations || [];
+  const dashboard = state.dashboard || {};
+  const recommendation = state.recommendation || dashboard.recommended_next_topic;
 
+  setText(summary.overallMastery, `${dashboard.overall_mastery ?? state.overall_mastery ?? 0}%`);
   setText(summary.accuracy, `${accuracy}%`);
   setText(summary.difficulty, `Level ${state.difficulty_level ?? 1}`);
   setText(summary.strongest, getStrongestSkill(skillEntries));
@@ -180,9 +234,26 @@ function renderProgress(state) {
   setText(summary.correct, String(correct));
   setText(summary.questions, String(stats.questions_asked || 0));
   setText(summary.streak, String(state.correct_streak ?? 0));
+  setText(
+    summary.commonMistake,
+    commonMistake ? commonMistake.label : "None detected",
+  );
+  setText(
+    summary.targetedPractice,
+    recommendations.length > 0
+      ? recommendations[0].practice_area
+      : recommendation?.topic || "No repeated pattern yet",
+  );
+  setText(
+    summary.recentImprovement,
+    `${dashboard.recent_improvement ?? 0} mastery points`,
+  );
+  setText(summary.hintUsage, String(dashboard.hint_usage ?? 0));
+  setText(summary.focusArea, dashboard.current_focus_area || recommendation?.topic || "Linear Equations");
 
   renderSkillScores(skillEntries);
   renderRecentActivity(state.recent_questions || []);
+  renderMisconceptions(state.misconception_summary || []);
 }
 
 async function loadProgressPage() {
@@ -193,6 +264,7 @@ async function loadProgressPage() {
   } catch (error) {
     skillScoreList.innerHTML = "";
     recentActivityList.innerHTML = "";
+    misconceptionList.innerHTML = "";
 
     const skillError = document.createElement("div");
     skillError.className = "status-card";
@@ -202,8 +274,13 @@ async function loadProgressPage() {
     activityError.className = "status-card";
     activityError.textContent = error.message || "Unable to load recent activity.";
 
+    const misconceptionError = document.createElement("div");
+    misconceptionError.className = "status-card";
+    misconceptionError.textContent = error.message || "Unable to load misconception data.";
+
     skillScoreList.appendChild(skillError);
     recentActivityList.appendChild(activityError);
+    misconceptionList.appendChild(misconceptionError);
   } finally {
     refreshButton.disabled = false;
   }

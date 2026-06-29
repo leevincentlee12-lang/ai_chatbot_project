@@ -12,7 +12,12 @@ from core.classifier import (
     classify_subject,
     detect_topic,
 )
-from core.progression import record_question, update_last_question_time
+from core.progression import (
+    personalise_hint_for_user,
+    record_hint_used,
+    record_question,
+    update_last_question_time,
+)
 from data.constants import (
     EXPERIMENT_MODE_PROMPT,
     FOLLOWUPS_BY_SUBJECT,
@@ -352,6 +357,14 @@ def answer_question(question, mode=None, version=None, user_id=None):
         )
     ):
         answer = handle_math(workflow_text, user_id=user_id)
+        if workflow_match.name in {"generate_hint", "generate_hint_from_steps"}:
+            record_hint_used(
+                skill=None,
+                topic=workflow_match.topic,
+                detail=workflow_text,
+                user_id=user_id,
+            )
+            answer = personalise_hint_for_user(answer, user_id=user_id)
         topic = workflow_match.topic
         record_question(
             workflow_text,
@@ -406,6 +419,14 @@ def answer_question(question, mode=None, version=None, user_id=None):
         }
 
     answer = answer_experiment_algebra_question(cleaned_text, resolved_mode)
+    if resolved_mode == "hint":
+        record_hint_used(
+            skill=None,
+            topic=_detect_experiment_topic(cleaned_text),
+            detail=cleaned_text,
+            user_id=user_id,
+        )
+        answer = personalise_hint_for_user(answer, user_id=user_id)
     topic = _detect_experiment_topic(cleaned_text)
     record_question(
         cleaned_text,

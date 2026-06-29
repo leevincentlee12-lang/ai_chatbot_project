@@ -577,6 +577,8 @@ class HomeworkHelperAppTests(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertIn("Student performance", html)
         self.assertIn("progressAccuracy", html)
+        self.assertIn("progressCommonMistake", html)
+        self.assertIn("misconceptionList", html)
         self.assertIn("skillScoreList", html)
         self.assertIn("recentActivityList", html)
         self.assertIn("progress.js", html)

@@ -27,6 +27,8 @@ DEFAULT_SKILLS = {
     "linear_equations": {"score": 0, "attempts": 0},
     "quadratics": {"score": 0, "attempts": 0},
     "factoring": {"score": 0, "attempts": 0},
+    "expanding_brackets": {"score": 0, "attempts": 0},
+    "simplifying_expressions": {"score": 0, "attempts": 0},
     "fractions": {"score": 0, "attempts": 0},
     "indices": {"score": 0, "attempts": 0},
     "rational_equations": {"score": 0, "attempts": 0},
@@ -133,6 +135,39 @@ def initialize_store():
                     submitted_answer TEXT,
                     correct_answer TEXT,
                     issue TEXT,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(user_id)
+                        ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS misconceptions (
+                    user_id TEXT NOT NULL,
+                    misconception_id TEXT NOT NULL,
+                    count INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, misconception_id),
+                    FOREIGN KEY (user_id) REFERENCES users(user_id)
+                        ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS mastery_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    skill TEXT NOT NULL,
+                    score INTEGER NOT NULL,
+                    attempts INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(user_id)
+                        ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS learning_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    skill TEXT,
+                    topic TEXT,
+                    detail TEXT,
                     created_at TEXT NOT NULL,
                     FOREIGN KEY (user_id) REFERENCES users(user_id)
                         ON DELETE CASCADE
@@ -277,6 +312,15 @@ def set_skill(user_id, skill, score, attempts):
                           attempts = excluded.attempts
             """,
             (user_id, skill, score, attempts),
+        )
+        conn.execute(
+            """
+            INSERT INTO mastery_history (
+                user_id, skill, score, attempts, created_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (user_id, skill, score, attempts, _now()),
         )
 
     return {"score": score, "attempts": attempts}
@@ -469,6 +513,142 @@ def get_mistakes(user_id=None, limit=10):
             "submitted_answer": row["submitted_answer"],
             "correct_answer": row["correct_answer"],
             "issue": row["issue"],
+            "created_at": row["created_at"],
+        }
+        for row in rows
+    ]
+
+
+def record_misconception(user_id, misconception_id):
+    """Increment a structured misconception count for a user."""
+    user_id = ensure_user(user_id)
+    misconception_id = str(misconception_id or "").strip()
+    if not misconception_id:
+        return 0
+
+    timestamp = _now()
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO misconceptions (
+                user_id, misconception_id, count, updated_at
+            )
+            VALUES (?, ?, 1, ?)
+            ON CONFLICT(user_id, misconception_id)
+            DO UPDATE SET count = count + 1,
+                          updated_at = excluded.updated_at
+            """,
+            (user_id, misconception_id, timestamp),
+        )
+        row = conn.execute(
+            """
+            SELECT count
+            FROM misconceptions
+            WHERE user_id = ? AND misconception_id = ?
+            """,
+            (user_id, misconception_id),
+        ).fetchone()
+
+    return int(row["count"]) if row else 0
+
+
+def get_misconception_counts(user_id=None):
+    """Return structured misconception counts for a user."""
+    user_id = ensure_user(user_id)
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT misconception_id, count
+            FROM misconceptions
+            WHERE user_id = ?
+            ORDER BY count DESC, misconception_id
+            """,
+            (user_id,),
+        ).fetchall()
+
+    return {
+        row["misconception_id"]: int(row["count"])
+        for row in rows
+    }
+
+
+def add_learning_event(user_id, event_type, skill=None, topic=None, detail=None):
+    """Record a lightweight learning event for history and analytics."""
+    user_id = ensure_user(user_id)
+    event_type = str(event_type or "").strip()
+    if not event_type:
+        return
+
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO learning_events (
+                user_id, event_type, skill, topic, detail, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                event_type,
+                skill,
+                topic,
+                detail,
+                _now(),
+            ),
+        )
+
+
+def get_learning_events(user_id=None, limit=50):
+    """Return recent learning events for dashboard analytics."""
+    user_id = ensure_user(user_id)
+    limit = max(1, min(200, int(limit)))
+
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT event_type, skill, topic, detail, created_at
+            FROM learning_events
+            WHERE user_id = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (user_id, limit),
+        ).fetchall()
+
+    return [
+        {
+            "event_type": row["event_type"],
+            "skill": row["skill"],
+            "topic": row["topic"],
+            "detail": row["detail"],
+            "created_at": row["created_at"],
+        }
+        for row in rows
+    ]
+
+
+def get_mastery_history(user_id=None, limit=100):
+    """Return recent mastery score snapshots for a user."""
+    user_id = ensure_user(user_id)
+    limit = max(1, min(500, int(limit)))
+
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT skill, score, attempts, created_at
+            FROM mastery_history
+            WHERE user_id = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (user_id, limit),
+        ).fetchall()
+
+    return [
+        {
+            "skill": row["skill"],
+            "score": int(row["score"]),
+            "attempts": int(row["attempts"]),
             "created_at": row["created_at"],
         }
         for row in rows
