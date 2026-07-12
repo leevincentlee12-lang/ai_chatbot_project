@@ -6,6 +6,12 @@ const analyticsBox = document.getElementById("analyticsBox");
 const feedbackBox = document.getElementById("feedbackBox");
 const lessonGrid = document.getElementById("lessonGrid");
 const lessonLibraryButton = document.getElementById("open-lesson-library");
+const graphEquationInput = document.getElementById("graphEquation");
+const plotGraphButton = document.getElementById("plotGraph");
+const graphSvg = document.getElementById("graphSvg");
+const graphEquationLabel = document.getElementById("graphEquationLabel");
+const graphSummary = document.getElementById("graphSummary");
+const graphFeatureList = document.getElementById("graphFeatureList");
 const dashboard = {
   questions: document.getElementById("dash-questions"),
   attempted: document.getElementById("dash-attempted"),
@@ -640,6 +646,175 @@ function bindClick(id, handler) {
   }
 }
 
+function svgElement(name, attributes = {}) {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", name);
+  Object.entries(attributes).forEach(([key, value]) => {
+    element.setAttribute(key, String(value));
+  });
+  return element;
+}
+
+function scalePoint(point, bounds, width, height, padding) {
+  const [xMin, xMax] = bounds.x;
+  const [yMin, yMax] = bounds.y;
+  const xRatio = (point.x - xMin) / (xMax - xMin);
+  const yRatio = (point.y - yMin) / (yMax - yMin);
+  return {
+    x: padding + xRatio * (width - padding * 2),
+    y: height - padding - yRatio * (height - padding * 2),
+  };
+}
+
+function renderGraph(data) {
+  if (!graphSvg) {
+    return;
+  }
+
+  const width = 720;
+  const height = 420;
+  const padding = 42;
+  const bounds = {
+    x: data.x_range || [-5, 5],
+    y: data.y_range || [-10, 10],
+  };
+
+  graphSvg.innerHTML = "";
+  graphSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+  const background = svgElement("rect", {
+    x: 0,
+    y: 0,
+    width,
+    height,
+    class: "graph-background",
+  });
+  graphSvg.appendChild(background);
+
+  for (let value = -5; value <= 5; value += 1) {
+    const vertical = scalePoint({ x: value, y: bounds.y[0] }, bounds, width, height, padding);
+    graphSvg.appendChild(svgElement("line", {
+      x1: vertical.x,
+      y1: padding,
+      x2: vertical.x,
+      y2: height - padding,
+      class: "graph-grid-line",
+    }));
+  }
+
+  const yStart = Math.ceil(bounds.y[0]);
+  const yEnd = Math.floor(bounds.y[1]);
+  const yStep = Math.max(1, Math.ceil((yEnd - yStart) / 8));
+  for (let value = yStart; value <= yEnd; value += yStep) {
+    const horizontal = scalePoint({ x: bounds.x[0], y: value }, bounds, width, height, padding);
+    graphSvg.appendChild(svgElement("line", {
+      x1: padding,
+      y1: horizontal.y,
+      x2: width - padding,
+      y2: horizontal.y,
+      class: "graph-grid-line",
+    }));
+  }
+
+  const xAxis = scalePoint({ x: bounds.x[0], y: 0 }, bounds, width, height, padding);
+  graphSvg.appendChild(svgElement("line", {
+    x1: padding,
+    y1: xAxis.y,
+    x2: width - padding,
+    y2: xAxis.y,
+    class: "graph-axis-line",
+  }));
+
+  const yAxis = scalePoint({ x: 0, y: bounds.y[0] }, bounds, width, height, padding);
+  graphSvg.appendChild(svgElement("line", {
+    x1: yAxis.x,
+    y1: padding,
+    x2: yAxis.x,
+    y2: height - padding,
+    class: "graph-axis-line",
+  }));
+
+  const path = (data.points || [])
+    .map((point, index) => {
+      const scaled = scalePoint(point, bounds, width, height, padding);
+      return `${index === 0 ? "M" : "L"} ${scaled.x.toFixed(2)} ${scaled.y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  graphSvg.appendChild(svgElement("path", {
+    d: path,
+    class: "graph-function-path",
+  }));
+}
+
+function renderGraphFeatures(data) {
+  if (!graphEquationLabel || !graphSummary || !graphFeatureList) {
+    return;
+  }
+
+  const features = data.features || {};
+  const entries = [];
+
+  if (data.kind === "linear") {
+    entries.push(["Gradient", features.gradient]);
+    entries.push(["Y-intercept", features.y_intercept]);
+  } else if (data.kind === "quadratic") {
+    entries.push(["Vertex", features.vertex ? `(${features.vertex.x}, ${features.vertex.y})` : "Not available"]);
+    entries.push(["Y-intercept", features.y_intercept]);
+  }
+
+  entries.push([
+    "X-intercepts",
+    Array.isArray(features.x_intercepts) && features.x_intercepts.length > 0
+      ? features.x_intercepts.join(", ")
+      : "None in the real-number graph",
+  ]);
+
+  graphEquationLabel.textContent = data.equation || "Supported function";
+  graphSummary.textContent = features.summary || "Graph data loaded.";
+  graphFeatureList.innerHTML = "";
+
+  entries.forEach(([label, value]) => {
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const description = document.createElement("dd");
+    description.textContent = value || "Not available";
+    graphFeatureList.appendChild(term);
+    graphFeatureList.appendChild(description);
+  });
+}
+
+async function plotGraph() {
+  if (!graphEquationInput || !graphSvg) {
+    return;
+  }
+
+  const equation = graphEquationInput.value.trim();
+  if (!equation) {
+    graphSummary.textContent = "Enter a function such as y = 2x + 3.";
+    return;
+  }
+
+  plotGraphButton.disabled = true;
+  graphSummary.textContent = "Plotting function...";
+
+  try {
+    const data = await fetchJson("/graph-data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ equation }),
+    });
+    renderGraph(data);
+    renderGraphFeatures(data);
+  } catch (error) {
+    graphSvg.innerHTML = "";
+    graphEquationLabel.textContent = "Graph unavailable";
+    graphSummary.textContent = error.message || "Unable to plot that function.";
+    graphFeatureList.innerHTML = "";
+  } finally {
+    plotGraphButton.disabled = false;
+  }
+}
+
 askButton.addEventListener("click", askQuestion);
 questionInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
@@ -656,10 +831,22 @@ bindClick("view-feedback", viewFeedback);
 lessonLibraryButton.addEventListener("click", () => {
   lessonGrid.scrollIntoView({ behavior: "smooth", block: "start" });
 });
+if (plotGraphButton) {
+  plotGraphButton.addEventListener("click", plotGraph);
+}
+if (graphEquationInput) {
+  graphEquationInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      plotGraph();
+    }
+  });
+}
 
 document.querySelectorAll("[data-suggest]").forEach((button) => {
   button.addEventListener("click", () => applySuggestion(button.dataset.suggest));
 });
 
+plotGraph();
 loadLessonCatalog();
 loadStudentDashboard();

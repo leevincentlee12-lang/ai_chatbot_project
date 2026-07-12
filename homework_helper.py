@@ -158,6 +158,7 @@ _EXPORTS = {
         "evaluate_answer_details",
         "factor_expression",
         "guided_response",
+        "graph_function_data",
         "handle_math",
         "solve_linear",
         "solve_quadratic",

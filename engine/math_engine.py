@@ -18,6 +18,7 @@ from engine.algebra_solver import (
     solve_values,
     sympy_solve_equation,
 )
+from engine.graph_engine import graph_function_data
 from engine.math_answer_checker import (
     _diagnose_linear_answer,
     evaluate_answer,
@@ -65,6 +66,7 @@ __all__ = [
     "factor_expression",
     "classify_math_request",
     "guided_response",
+    "graph_function_data",
     "handle_math",
     "MATH_INTENTS",
     "solve_linear",

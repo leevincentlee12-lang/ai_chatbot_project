@@ -9,6 +9,7 @@ from homework_helper import (
     factor_expression,
     generate_problem,
     generate_lesson,
+    graph_function_data,
     handle_math,
     list_lessons,
     solve_values,
@@ -163,6 +164,7 @@ class HomeworkHelperAppTests(unittest.TestCase):
             "solve x^2 - 9 = 0": "solve_quadratic",
             "explain the discriminant in x^2 - 4x + 3 = 0": "explain_discriminant",
             "explain y = mx + c": "linear_graph_form",
+            "graph y = 2x + 3": "graph_function",
             "factor x^2 - 9": "factor_expression",
             "simplify 2x + 3x - 4": "simplify_expression",
             "solve x+y=5 and x-y=1": "solve_simultaneous",
@@ -224,6 +226,28 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertIn("m is the gradient", result["answer"])
         self.assertIn("c is the y-intercept", result["answer"])
         self.assertNotIn("Provide an algebra equation", result["answer"])
+
+    def test_graph_function_data_supports_linear_and_quadratic_functions(self):
+        linear = graph_function_data("y = 2x + 3")
+        quadratic = graph_function_data("graph y = x^2 - 4x + 3")
+
+        self.assertEqual(linear["kind"], "linear")
+        self.assertEqual(linear["features"]["gradient"], "2")
+        self.assertEqual(linear["features"]["y_intercept"], "3")
+        self.assertTrue(linear["points"])
+
+        self.assertEqual(quadratic["kind"], "quadratic")
+        self.assertEqual(quadratic["features"]["vertex"]["x"], "2")
+        self.assertEqual(quadratic["features"]["vertex"]["y"], "-1")
+        self.assertIn("1", quadratic["features"]["x_intercepts"])
+        self.assertIn("3", quadratic["features"]["x_intercepts"])
+
+    def test_graph_function_chat_request_is_supported(self):
+        result = answer_question("graph y = x^2 - 4x + 3", mode="step-by-step")
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Functions and Graphs")
+        self.assertIn("quadratic function", result["answer"])
+        self.assertIn("Function Graph Explorer", result["answer"])
 
     def test_worded_linear_equation_prompts_extract_equation(self):
         examples = {
@@ -514,10 +538,34 @@ class HomeworkHelperAppTests(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertIn("Open Practice Mode", html)
         self.assertIn('href="/practice"', html)
+        self.assertIn("Function Graph Explorer", html)
+        self.assertIn("graphEquation", html)
+        self.assertIn("plotGraph", html)
         self.assertNotIn("practice-easy", html)
         self.assertNotIn("practiceProblem", html)
         self.assertNotIn("studentAnswer", html)
         self.assertNotIn("submit-answer", html)
+
+    def test_graph_data_endpoint_returns_supported_graph_payload(self):
+        response = self.client.post(
+            "/graph-data",
+            json={"equation": "y = 2x + 3"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["kind"], "linear")
+        self.assertEqual(payload["equation"], "y = 2*x + 3")
+        self.assertTrue(payload["points"])
+
+    def test_graph_data_endpoint_rejects_unsupported_graphs_cleanly(self):
+        response = self.client.post(
+            "/graph-data",
+            json={"equation": "y = sin(x)"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("supports linear and quadratic", response.get_json()["error"])
 
     def test_homepage_defaults_to_step_by_step_mode(self):
         response = self.client.get("/")

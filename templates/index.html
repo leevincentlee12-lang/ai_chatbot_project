@@ -15,6 +15,7 @@
         <div class="nav-links">
           <a href="#home">Home</a>
           <a href="#lessons">Lessons</a>
+          <a href="#graphs">Graphs</a>
           <a href="/practice">Practice</a>
           <a href="/progress-page">Progress</a>
           <a href="/about">About</a>
@@ -57,6 +58,7 @@
           <button class="chip-button" type="button" data-suggest="solve 3x + 5 = 20">Solve a linear equation</button>
           <button class="chip-button" type="button" data-suggest="factor x^2 - 9">Practise factoring</button>
           <button class="chip-button" type="button" data-suggest="simplify 2x + 3x - 4">Simplify an expression</button>
+          <button class="chip-button" type="button" data-suggest="graph y = x^2 - 4x + 3">Interpret a graph</button>
           <button class="chip-button" type="button" data-suggest="simplify the ratio 6:9">Simplify a ratio</button>
         </div>
 
@@ -73,6 +75,32 @@
             <button id="ask" class="primary-button" type="button">Get Guidance</button>
           </div>
         </section>
+      </section>
+
+      <section id="graphs" class="section-block graph-explorer-section">
+        <div class="section-heading split-heading">
+          <div>
+            <h2>Function Graph Explorer</h2>
+            <p>Plot supported linear and quadratic functions, then connect the graph to key equation features.</p>
+          </div>
+          <div class="graph-input-row">
+            <input id="graphEquation" type="text" value="y = x^2 - 4x + 3" aria-label="Function to graph">
+            <button id="plotGraph" class="secondary-button" type="button">Plot Function</button>
+          </div>
+        </div>
+
+        <div class="graph-explorer-grid">
+          <div class="graph-canvas-panel">
+            <svg id="graphSvg" class="graph-svg" role="img" aria-label="Function graph"></svg>
+          </div>
+
+          <aside class="graph-details-panel" aria-live="polite">
+            <span class="learning-plan-label">Graph features</span>
+            <strong id="graphEquationLabel">Loading...</strong>
+            <p id="graphSummary">Loading graph data...</p>
+            <dl id="graphFeatureList" class="graph-feature-list"></dl>
+          </aside>
+        </div>
       </section>
 
       <section id="lessons" class="section-block">

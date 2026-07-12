@@ -493,6 +493,107 @@ select:focus {
     gap: 14px;
 }
 
+.graph-explorer-section {
+    background: #ffffff;
+}
+
+.graph-input-row {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-width: min(100%, 520px);
+}
+
+.graph-explorer-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+    gap: 18px;
+    align-items: stretch;
+    margin-top: 18px;
+}
+
+.graph-canvas-panel,
+.graph-details-panel {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel-bg);
+}
+
+.graph-canvas-panel {
+    overflow: hidden;
+    min-height: 360px;
+}
+
+.graph-svg {
+    display: block;
+    width: 100%;
+    min-height: 360px;
+}
+
+.graph-background {
+    fill: #fbfdff;
+}
+
+.graph-grid-line {
+    stroke: #d9e3ec;
+    stroke-width: 1;
+}
+
+.graph-axis-line {
+    stroke: #0f172a;
+    stroke-width: 1.5;
+}
+
+.graph-function-path {
+    fill: none;
+    stroke: var(--primary);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+}
+
+.graph-details-panel {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    padding: 16px;
+}
+
+.graph-details-panel strong {
+    color: var(--ink);
+    font-size: 1.3rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.graph-details-panel p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.graph-feature-list {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.5fr) minmax(0, 1fr);
+    gap: 10px 12px;
+    margin: 0;
+}
+
+.graph-feature-list dt {
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.graph-feature-list dd {
+    margin: 0;
+    color: var(--ink);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
 .practice-mode-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
@@ -1141,6 +1242,8 @@ select:focus {
     .hero-layout,
     .split-heading,
     .two-column-section,
+    .graph-input-row,
+    .graph-explorer-grid,
     .practice-mode-grid,
     .lesson-page-grid,
     .progress-layout,

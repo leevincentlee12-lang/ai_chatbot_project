@@ -20,6 +20,7 @@ from homework_helper import (
     evaluate_answer_details,
     generate_adaptive_problem,
     generate_lesson,
+    graph_function_data,
     get_learning_state,
     get_student_skills,
     get_student_stats,
@@ -305,6 +306,22 @@ def analytics():
         "average_rating": average_rating,
         "subject_distribution": subject_counts,
     })
+
+
+@app.route("/graph-data", methods=["POST"])
+def graph_data():
+    data = _json_payload()
+    equation = str(data.get("equation", "")).strip()
+
+    if not equation:
+        return jsonify({
+            "error": "Enter a function to graph, for example y = 2x + 3.",
+        }), 400
+
+    try:
+        return jsonify(graph_function_data(equation))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
 
 
 @app.route("/practice/<int:level>")

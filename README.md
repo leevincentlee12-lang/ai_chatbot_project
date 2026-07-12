@@ -63,6 +63,7 @@ mathematical topics or adding unnecessary features.
 - Progress tracking with accuracy, difficulty, skill scores, and recent activity
 - Lightweight session memory using Flask sessions and SQLite-backed state
 - Rule-based misconception detection and adaptive practice recommendations
+- Function Graph Explorer for supported linear and quadratic functions
 - Clean error handling for malformed equations and unsupported input
 
 ## Supported Algebra Areas
@@ -74,6 +75,7 @@ mathematical topics or adding unnecessary features.
 - Ratios
 - Simultaneous equations
 - Selected trigonometry-style algebra questions
+- Linear and quadratic function graphing
 - Generated practice problems at different difficulty levels
 
 ## Teacher Feedback
@@ -169,7 +171,7 @@ python -m unittest discover -s tests
 Latest test run:
 
 ```text
-78 tests passed
+82 tests passed
 ```
 
 ## Setup
@@ -233,7 +235,7 @@ a pause can take longer.
 
 ## Future Improvements
 
-- Add graph visuals for linear and quadratic equations
+- Expand graph visuals beyond the current linear and quadratic function support
 - Improve common mistake detection and feedback
 - Add more Year 10 and Year 11 style question generators
 - Add teacher-facing summaries after the learning data model is more mature

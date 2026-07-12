@@ -49,6 +49,7 @@ WORKFLOW_INTENTS = {
     "generate_problem_linear",
     "generate_problem_quadratic",
     "generate_problem_similar",
+    "graph_function",
     "guided_answer",
     "guided_problem",
     "record_step",
