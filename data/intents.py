@@ -173,6 +173,48 @@ INTENTS: Dict[str, IntentDefinition] = {
             "explain the straight line equation y = mx + c",
         ),
     ),
+    "function_graph": IntentDefinition(
+        name="function_graph",
+        patterns=(
+            r"\b(?:graph|plot|sketch|draw|explain|interpret)\b.*\by\s*=",
+            r"\by\s*=.*\b(?:graph|plot|sketch|draw|explain|interpret)\b",
+            r"\bf\(x\)\s*=",
+        ),
+        keywords=("graph", "function", "linear graph", "parabola", "intercepts", "vertex"),
+        topic="Functions and Graphs",
+        engine="math",
+        difficulty=3,
+        examples=(
+            "explain the graph of y = 2x + 3",
+            "graph y = x^2 - 4x + 3",
+            "interpret the parabola y = x^2 - 5x + 6",
+        ),
+    ),
+    "coordinate_geometry": IntentDefinition(
+        name="coordinate_geometry",
+        patterns=(
+            r"\b(?:midpoint|distance|gradient|slope)\b.*\([^,()]+,\s*[^()]+\)",
+            r"\bequation\s+of\s+(?:the\s+)?line\b.*\([^,()]+,\s*[^()]+\)",
+            r"\bline\s+(?:through|passing)\b.*\([^,()]+,\s*[^()]+\)",
+        ),
+        keywords=(
+            "coordinate",
+            "midpoint",
+            "distance",
+            "gradient",
+            "slope",
+            "equation of line",
+            "line through",
+        ),
+        topic="Coordinate Geometry",
+        engine="math",
+        difficulty=3,
+        examples=(
+            "find the midpoint of (2, 3) and (6, 11)",
+            "find the gradient between (2, 3) and (6, 11)",
+            "find the equation of the line through (2, 3) and (6, 11)",
+        ),
+    ),
     "gradient": IntentDefinition(
         name="gradient",
         patterns=(

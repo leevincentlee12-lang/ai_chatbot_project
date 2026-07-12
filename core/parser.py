@@ -25,8 +25,8 @@ MATH_PARSE_ERROR_MESSAGE = (
 )
 UNSUPPORTED_MATH_OPERATION_MESSAGE = (
     "This algebra workflow supports linear equations, quadratic equations, "
-    "factoring, simplifying expressions, simultaneous equations, hints, and "
-    "practice problems."
+    "factoring, simplifying expressions, simultaneous equations, coordinate "
+    "geometry, function graphs, hints, and practice problems."
 )
 
 

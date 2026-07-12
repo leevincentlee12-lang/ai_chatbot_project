@@ -64,6 +64,8 @@ mathematical topics or adding unnecessary features.
 - Lightweight session memory using Flask sessions and SQLite-backed state
 - Rule-based misconception detection and adaptive practice recommendations
 - Function Graph Explorer for supported linear and quadratic functions
+- Graph interpretation for gradients, intercepts, vertices, axes of symmetry, and discriminants
+- Coordinate geometry support for midpoint, gradient, distance, and line-equation questions
 - Clean error handling for malformed equations and unsupported input
 
 ## Supported Algebra Areas
@@ -76,6 +78,7 @@ mathematical topics or adding unnecessary features.
 - Simultaneous equations
 - Selected trigonometry-style algebra questions
 - Linear and quadratic function graphing
+- Coordinate geometry foundations: midpoint, gradient, distance, and equations of lines
 - Generated practice problems at different difficulty levels
 
 ## Teacher Feedback
@@ -171,7 +174,7 @@ python -m unittest discover -s tests
 Latest test run:
 
 ```text
-82 tests passed
+86 tests passed
 ```
 
 ## Setup
@@ -236,6 +239,7 @@ a pause can take longer.
 ## Future Improvements
 
 - Expand graph visuals beyond the current linear and quadratic function support
+- Add more coordinate-geometry workflows after the current midpoint, distance, gradient, and line-equation support
 - Improve common mistake detection and feedback
 - Add more Year 10 and Year 11 style question generators
 - Add teacher-facing summaries after the learning data model is more mature

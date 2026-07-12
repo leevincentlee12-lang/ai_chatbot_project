@@ -9,6 +9,7 @@ from homework_helper import (
     factor_expression,
     generate_problem,
     generate_lesson,
+    gradient_between_points,
     graph_function_data,
     handle_math,
     list_lessons,
@@ -165,6 +166,7 @@ class HomeworkHelperAppTests(unittest.TestCase):
             "explain the discriminant in x^2 - 4x + 3 = 0": "explain_discriminant",
             "explain y = mx + c": "linear_graph_form",
             "graph y = 2x + 3": "graph_function",
+            "find midpoint of (2, 3) and (6, 11)": "coordinate_geometry",
             "factor x^2 - 9": "factor_expression",
             "simplify 2x + 3x - 4": "simplify_expression",
             "solve x+y=5 and x-y=1": "solve_simultaneous",
@@ -248,6 +250,59 @@ class HomeworkHelperAppTests(unittest.TestCase):
         self.assertEqual(result["topic"], "Functions and Graphs")
         self.assertIn("quadratic function", result["answer"])
         self.assertIn("Function Graph Explorer", result["answer"])
+
+    def test_linear_graph_interpretation_explains_features(self):
+        result = answer_question(
+            "explain the graph of y = 2x + 3",
+            mode="step-by-step",
+        )
+
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Functions and Graphs")
+        self.assertIn("gradient is 2", result["answer"])
+        self.assertIn("y-intercept is 3", result["answer"])
+        self.assertIn("x-intercept", result["answer"])
+        self.assertIn("(0, 3)", result["answer"])
+
+    def test_quadratic_graph_interpretation_explains_vertex_and_discriminant(self):
+        result = answer_question(
+            "explain the graph of y = x^2 - 4x + 3",
+            mode="step-by-step",
+        )
+
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Functions and Graphs")
+        self.assertIn("vertex (2, -1)", result["answer"])
+        self.assertIn("axis of symmetry x = 2", result["answer"])
+        self.assertIn("x = 1 or x = 3", result["answer"])
+        self.assertIn("discriminant is 4", result["answer"])
+
+    def test_coordinate_geometry_handles_gradient_midpoint_distance_and_line(self):
+        cases = {
+            "find the gradient between (2, 3) and (6, 11)": "The gradient is 2",
+            "find the midpoint of (2, 3) and (6, 11)": "The midpoint is (4, 7)",
+            "find the distance between (2, 3) and (6, 11)": "4*sqrt(5)",
+            "find the equation of the line through (2, 3) and (6, 11)": "y = 2x - 1",
+        }
+
+        for question, expected in cases.items():
+            with self.subTest(question=question):
+                result = answer_question(question, mode="step-by-step")
+                self.assertEqual(result["subject"], "Math")
+                self.assertEqual(result["topic"], "Coordinate Geometry")
+                self.assertIn(expected, result["answer"])
+
+    def test_coordinate_geometry_vertical_line_is_handled_cleanly(self):
+        result = answer_question(
+            "find the equation of the line through (3, 1) and (3, 5)",
+            mode="step-by-step",
+        )
+
+        self.assertEqual(result["subject"], "Math")
+        self.assertEqual(result["topic"], "Coordinate Geometry")
+        self.assertIn("x = 3", result["answer"])
+
+        self.assertIsNone(gradient_between_points((3, 1), (3, 5)))
 
     def test_worded_linear_equation_prompts_extract_equation(self):
         examples = {

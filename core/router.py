@@ -39,6 +39,7 @@ from engine.science_engine import handle_science
 WORKFLOW_INTENTS = {
     "check_answer",
     "clear_steps",
+    "coordinate_geometry",
     "explain_balance",
     "explain_factor_inverse",
     "generate_hint_from_steps",
@@ -61,6 +62,7 @@ WORKFLOW_INTENTS = {
 
 SCOPE_FREE_WORKFLOW_INTENTS = {
     "clear_steps",
+    "coordinate_geometry",
     "explain_balance",
     "generate_problem",
     "generate_problem_factoring",
@@ -247,6 +249,20 @@ def get_followups(subject, topic, question="", answer_text=""):
             "Simplify 4x - 2 + 3x",
             "Expand (x + 2)(x - 5)",
             "Factor x^2 - 9",
+        ]
+
+    if subject == "Math" and topic == "Coordinate Geometry":
+        return [
+            "Find the gradient between (2, 3) and (6, 11)",
+            "Find the midpoint of (2, 3) and (6, 11)",
+            "Find the equation of the line through (2, 3) and (6, 11)",
+        ]
+
+    if subject == "Math" and topic == "Functions and Graphs":
+        return [
+            "Explain the graph of y = 2x + 3",
+            "Explain the graph of y = x^2 - 4x + 3",
+            "Graph y = -x + 4",
         ]
 
     if subject == "Math" and topic == "Ratios":

@@ -32,7 +32,8 @@ from engine.algebra_solver import (
     solve_simultaneous,
     sympy_solve_equation,
 )
-from engine.graph_engine import graph_function_data
+from engine.coordinate_geometry import handle_coordinate_geometry
+from engine.graph_engine import graph_function_interpretation
 from engine.math_answer_checker import evaluate_answer_details
 from engine.lesson_engine import _is_lesson_request, find_lesson_topic, generate_lesson
 from engine.math_practice import guided_response, start_guided_problem
@@ -421,41 +422,49 @@ def _handle_linear_graph_form(context):
 
 
 def _matches_graph_function(context):
-    return (
-        any(word in context.q_lower for word in ("graph", "plot", "sketch", "draw"))
-        and ("y" in context.q_lower or "f(x)" in context.q_lower)
+    has_function_equation = (
+        ("y" in context.q_lower or "f(x)" in context.q_lower)
         and "=" in context.q_lower
     )
+    graph_cue = any(
+        word in context.q_lower
+        for word in ("graph", "plot", "sketch", "draw")
+    )
+    explanation_cue = bool(
+        re.search(r"\b(?:explain|interpret|what\s+does)\b", context.q_lower)
+    )
+    return has_function_equation and (graph_cue or explanation_cue)
 
 
 def _handle_graph_function(context):
     try:
-        data = graph_function_data(context.original)
+        return graph_function_interpretation(context.original)
     except ValueError as error:
         return str(error)
 
-    features = data["features"]
-    if data["kind"] == "linear":
-        method = (
-            f"Plot the y-intercept {features['y_intercept']}, then use the "
-            f"gradient {features['gradient']} to find another point."
-        )
-    else:
-        method = (
-            f"Mark the vertex ({features['vertex']['x']}, {features['vertex']['y']}), "
-            "then use symmetry and intercepts to sketch the parabola."
-        )
 
-    return _build_explanation(
-        answer=f"{data['equation']} is a {data['kind']} function.",
-        method=method,
-        why=features["summary"],
-        check=(
-            "Open the Function Graph Explorer on the homepage to view the "
-            "coordinate graph."
-        ),
-        next_step="Compare the graph with the equation features: gradient, intercepts, or vertex.",
+def _matches_coordinate_geometry(context):
+    has_two_points = len(re.findall(r"\([^,()]+,\s*[^()]+\)", context.original)) >= 2
+    has_coordinate_keyword = any(
+        keyword in context.q_lower
+        for keyword in (
+            "coordinate",
+            "midpoint",
+            "middle point",
+            "distance",
+            "gradient",
+            "slope",
+            "equation of",
+            "line through",
+            "line passing",
+            "straight line",
+        )
     )
+    return has_two_points and has_coordinate_keyword
+
+
+def _handle_coordinate_geometry(context):
+    return handle_coordinate_geometry(context.original)
 
 
 def _handle_solve_simultaneous(context):
@@ -678,6 +687,12 @@ MATH_INTENTS = (
         topic="Functions and Graphs",
         matcher=_matches_graph_function,
         handler=_handle_graph_function,
+    ),
+    MathIntent(
+        name="coordinate_geometry",
+        topic="Coordinate Geometry",
+        matcher=_matches_coordinate_geometry,
+        handler=_handle_coordinate_geometry,
     ),
     MathIntent(
         name="expand_expression",
