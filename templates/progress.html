@@ -46,6 +46,43 @@
     </header>
 
     <main class="progress-page">
+      <section class="section-block learning-plan-section">
+        <div class="section-heading split-heading">
+          <div>
+            <h2>Adaptive Learning Plan</h2>
+            <p>The next recommendation is generated from mastery, recent mistakes, and misconception history.</p>
+          </div>
+          <a class="secondary-button" href="/practice">Open Practice Mode</a>
+        </div>
+
+        <div class="learning-plan-card" aria-live="polite">
+          <div class="learning-plan-main">
+            <span class="learning-plan-label">Recommended next step</span>
+            <strong id="progressPlanTitle">Loading...</strong>
+            <p id="progressPlanReason">Loading recommendation reason...</p>
+          </div>
+
+          <div class="learning-plan-details" aria-label="Recommendation evidence">
+            <div>
+              <span>Focus area</span>
+              <strong id="progressPlanFocus">Loading...</strong>
+            </div>
+            <div>
+              <span>Overall mastery</span>
+              <strong id="progressPlanMastery">Loading...</strong>
+            </div>
+            <div>
+              <span>Most common mistake</span>
+              <strong id="progressPlanMistake">Loading...</strong>
+            </div>
+            <div>
+              <span>Suggested action</span>
+              <strong id="progressPlanAction">Loading...</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="section-block">
         <div class="section-heading split-heading">
           <div>

@@ -15,6 +15,15 @@ const summary = {
   focusArea: document.getElementById("progressFocusArea"),
 };
 
+const learningPlan = {
+  title: document.getElementById("progressPlanTitle"),
+  reason: document.getElementById("progressPlanReason"),
+  focus: document.getElementById("progressPlanFocus"),
+  mastery: document.getElementById("progressPlanMastery"),
+  mistake: document.getElementById("progressPlanMistake"),
+  action: document.getElementById("progressPlanAction"),
+};
+
 const skillScoreList = document.getElementById("skillScoreList");
 const recentActivityList = document.getElementById("recentActivityList");
 const misconceptionList = document.getElementById("misconceptionList");
@@ -212,6 +221,41 @@ function renderMisconceptions(items = []) {
   });
 }
 
+function getPlanAction(recommendation = {}) {
+  const type = String(recommendation.type || "").toLowerCase();
+
+  if (type === "lesson") {
+    return "Review the lesson, then complete targeted practice.";
+  }
+
+  if (type === "challenge") {
+    return "Try a harder problem and check your reasoning.";
+  }
+
+  return "Complete practice problems in this focus area.";
+}
+
+function renderLearningPlan(state) {
+  const dashboard = state.dashboard || {};
+  const recommendation = state.recommendation || dashboard.recommended_next_topic || {};
+  const commonMistake = state.most_common_misconception;
+  const mastery = dashboard.overall_mastery ?? state.overall_mastery ?? 0;
+  const focus = dashboard.current_focus_area || recommendation.topic || "Linear Equations";
+
+  setText(learningPlan.title, recommendation.title || `Recommended Practice: ${focus}`);
+  setText(
+    learningPlan.reason,
+    recommendation.reason || "Start with a core algebra topic before moving into harder questions.",
+  );
+  setText(learningPlan.focus, focus);
+  setText(learningPlan.mastery, `${mastery}%`);
+  setText(
+    learningPlan.mistake,
+    commonMistake ? commonMistake.label : "No repeated misconception detected",
+  );
+  setText(learningPlan.action, getPlanAction(recommendation));
+}
+
 function renderProgress(state) {
   const stats = state.stats || {};
   const attempted = Number(stats.problems_attempted || 0);
@@ -251,6 +295,7 @@ function renderProgress(state) {
   setText(summary.hintUsage, String(dashboard.hint_usage ?? 0));
   setText(summary.focusArea, dashboard.current_focus_area || recommendation?.topic || "Linear Equations");
 
+  renderLearningPlan(state);
   renderSkillScores(skillEntries);
   renderRecentActivity(state.recent_questions || []);
   renderMisconceptions(state.misconception_summary || []);

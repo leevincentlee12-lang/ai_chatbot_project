@@ -604,6 +604,89 @@ select:focus {
     gap: 18px;
 }
 
+.learning-plan-section {
+    border-color: #b8d2c4;
+    background: #f7fbf8;
+}
+
+.learning-plan-card {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+    gap: 18px;
+    align-items: stretch;
+    margin-top: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel-bg);
+    padding: 18px;
+}
+
+.learning-plan-main {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    min-width: 0;
+}
+
+.learning-plan-label {
+    color: var(--teal);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.learning-plan-main strong {
+    color: var(--ink);
+    font-size: 1.45rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.learning-plan-main p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.learning-plan-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.learning-plan-details div {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-muted);
+    padding: 12px;
+}
+
+.learning-plan-details span {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.learning-plan-details strong {
+    color: var(--ink);
+    font-size: 0.98rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.compact-plan-card {
+    grid-template-columns: 1fr;
+    margin-top: 0;
+}
+
+.single-column-details {
+    grid-template-columns: 1fr;
+}
+
 .about-page {
     display: grid;
     gap: 18px;
@@ -1063,6 +1146,11 @@ select:focus {
     .progress-layout,
     .about-grid,
     .data-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .learning-plan-card,
+    .learning-plan-details {
         grid-template-columns: 1fr;
     }
 

@@ -17,6 +17,13 @@ const dashboard = {
   weakest: document.getElementById("practiceDashWeakest"),
 };
 
+const learningPlan = {
+  title: document.getElementById("practicePlanTitle"),
+  reason: document.getElementById("practicePlanReason"),
+  focus: document.getElementById("practicePlanFocus"),
+  mistake: document.getElementById("practicePlanMistake"),
+};
+
 const SECTION_LABELS = new Map([
   ["answer", "Answer"],
   ["result", "Answer"],
@@ -76,6 +83,30 @@ function setDashboardValue(key, value) {
   if (dashboard[key]) {
     dashboard[key].textContent = value;
   }
+}
+
+function setText(element, value) {
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function renderLearningPlan(state) {
+  const dashboardState = state.dashboard || {};
+  const recommendation = state.recommendation || dashboardState.recommended_next_topic || {};
+  const commonMistake = state.most_common_misconception;
+  const focus = dashboardState.current_focus_area || recommendation.topic || "Linear Equations";
+
+  setText(learningPlan.title, recommendation.title || `Recommended Practice: ${focus}`);
+  setText(
+    learningPlan.reason,
+    recommendation.reason || "Start with a core algebra topic before moving into harder questions.",
+  );
+  setText(learningPlan.focus, focus);
+  setText(
+    learningPlan.mistake,
+    commonMistake ? commonMistake.label : "No repeated misconception detected",
+  );
 }
 
 function normaliseHeading(line) {
@@ -290,6 +321,7 @@ async function loadProgress() {
     setDashboardValue("streak", String(state.correct_streak ?? 0));
     setDashboardValue("difficulty", `Level ${state.difficulty_level ?? 1}`);
     setDashboardValue("weakest", findWeakestSkill(state.skill_progression || {}));
+    renderLearningPlan(state);
   } catch (error) {
     setDashboardValue("attempted", "Unavailable");
     setDashboardValue("correct", "Unavailable");
@@ -297,6 +329,10 @@ async function loadProgress() {
     setDashboardValue("streak", "Unavailable");
     setDashboardValue("difficulty", "Unavailable");
     setDashboardValue("weakest", "Unavailable");
+    setText(learningPlan.title, "Recommendation unavailable");
+    setText(learningPlan.reason, "Progress data could not be loaded.");
+    setText(learningPlan.focus, "Unavailable");
+    setText(learningPlan.mistake, "Unavailable");
   }
 }
 
