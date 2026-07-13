@@ -6,6 +6,7 @@ implementation is now user-scoped and backed by `core.state_store`.
 """
 
 import random
+from fractions import Fraction
 
 from core.adaptive import (
     build_learning_dashboard,
@@ -218,6 +219,41 @@ def record_hint_used(skill=None, topic=None, detail=None, user_id=None):
 def detect_math_skill(question):
     """Infer the targeted maths skill from a question string."""
     q_lower = (question or "").lower()
+
+    if (
+        "(" in q_lower
+        and ")" in q_lower
+        and any(
+            keyword in q_lower
+            for keyword in (
+                "coordinate",
+                "midpoint",
+                "distance",
+                "gradient",
+                "slope",
+                "equation of the line",
+                "line through",
+                "line passing",
+            )
+        )
+    ):
+        return "coordinate_geometry"
+
+    if (
+        "y =" in q_lower
+        and any(
+            keyword in q_lower
+            for keyword in (
+                "graph",
+                "gradient",
+                "intercept",
+                "vertex",
+                "axis of symmetry",
+                "discriminant",
+            )
+        )
+    ):
+        return "function_graphs"
 
     if "(" in q_lower and ")" in q_lower and "x" in q_lower:
         return "expanding_brackets"
@@ -588,6 +624,153 @@ def _generate_rational_equation_problem(ranges):
     }
 
 
+def _point_pair(ranges, avoid_vertical=False, avoid_horizontal=False):
+    """Return two classroom-friendly points for coordinate geometry."""
+    x1 = random.randint(*ranges["x_range"])
+    y1 = random.randint(*ranges["x_range"])
+    x2 = x1
+    y2 = y1
+
+    while (
+        (x2 == x1 and y2 == y1)
+        or (avoid_vertical and x2 == x1)
+        or (avoid_horizontal and y2 == y1)
+    ):
+        x2 = random.randint(*ranges["x_range"])
+        y2 = random.randint(*ranges["x_range"])
+
+    return (x1, y1), (x2, y2)
+
+
+def _format_point(point):
+    return f"({point[0]}, {point[1]})"
+
+
+def _format_fraction(value):
+    """Format an integer or simple rational value without decimal noise."""
+    fraction = Fraction(value).limit_denominator()
+    if fraction.denominator == 1:
+        return str(fraction.numerator)
+    return f"{fraction.numerator}/{fraction.denominator}"
+
+
+def _format_fraction_x_term(value):
+    """Format mx for a line equation."""
+    fraction = Fraction(value).limit_denominator()
+    if fraction == 1:
+        return "x"
+    if fraction == -1:
+        return "-x"
+    text = _format_fraction(fraction)
+    return f"({text})x" if fraction.denominator != 1 else f"{text}x"
+
+
+def _format_line_equation(gradient, intercept):
+    """Format y = mx + c using readable school notation."""
+    equation = f"y = {_format_fraction_x_term(gradient)}"
+    intercept_fraction = Fraction(intercept).limit_denominator()
+    if intercept_fraction == 0:
+        return equation
+    sign = " + " if intercept_fraction > 0 else " - "
+    return f"{equation}{sign}{_format_fraction(abs(intercept_fraction))}"
+
+
+def _generate_coordinate_midpoint_problem(ranges):
+    """Generate a midpoint problem from two points."""
+    point_a, point_b = _point_pair(ranges)
+    midpoint = (
+        Fraction(point_a[0] + point_b[0], 2),
+        Fraction(point_a[1] + point_b[1], 2),
+    )
+    return {
+        "skill": "coordinate_geometry",
+        "problem": f"Find the midpoint of {_format_point(point_a)} and {_format_point(point_b)}.",
+        "solution": _format_point((
+            _format_fraction(midpoint[0]),
+            _format_fraction(midpoint[1]),
+        )),
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_coordinate_gradient_problem(ranges):
+    """Generate a gradient-between-two-points problem."""
+    point_a, point_b = _point_pair(ranges, avoid_vertical=True)
+    gradient = Fraction(point_b[1] - point_a[1], point_b[0] - point_a[0])
+    return {
+        "skill": "coordinate_geometry",
+        "problem": f"Find the gradient between {_format_point(point_a)} and {_format_point(point_b)}.",
+        "solution": _format_fraction(gradient),
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_coordinate_distance_problem(ranges):
+    """Generate a distance-between-two-points problem."""
+    point_a, point_b = _point_pair(ranges)
+    dx = point_b[0] - point_a[0]
+    dy = point_b[1] - point_a[1]
+    squared_distance = dx * dx + dy * dy
+    return {
+        "skill": "coordinate_geometry",
+        "problem": f"Find the distance between {_format_point(point_a)} and {_format_point(point_b)}.",
+        "solution": f"sqrt({squared_distance})",
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_coordinate_line_problem(ranges):
+    """Generate an equation-of-a-line problem from two points."""
+    point_a, point_b = _point_pair(ranges, avoid_vertical=True)
+    gradient = Fraction(point_b[1] - point_a[1], point_b[0] - point_a[0])
+    intercept = point_a[1] - gradient * point_a[0]
+    return {
+        "skill": "coordinate_geometry",
+        "problem": f"Find the equation of the line through {_format_point(point_a)} and {_format_point(point_b)}.",
+        "solution": _format_line_equation(gradient, intercept),
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_linear_graph_feature_problem(ranges):
+    """Generate a graph-feature question for a straight line."""
+    gradient = _random_nonzero(-6, 6)
+    intercept = random.randint(*ranges["b_range"])
+    question_type = random.choice(("gradient", "y_intercept", "x_intercept"))
+    equation = f"y = {_format_linear_side(gradient, intercept)}"
+
+    if question_type == "gradient":
+        prompt = "Find the gradient"
+        solution = str(gradient)
+    elif question_type == "y_intercept":
+        prompt = "Find the y-intercept"
+        solution = str(intercept)
+    else:
+        prompt = "Find the x-intercept"
+        solution = _format_fraction(Fraction(-intercept, gradient))
+
+    return {
+        "skill": "function_graphs",
+        "problem": f"For {equation}, {prompt}.",
+        "solution": solution,
+        "difficulty": ranges["label"],
+    }
+
+
+def _generate_quadratic_graph_vertex_problem(ranges):
+    """Generate a graph-feature question for a quadratic in vertex form."""
+    h_value = random.randint(-5, 5)
+    k_value = random.randint(*ranges["b_range"])
+    a_value = random.choice((-1, 1))
+    equation = f"y = {'' if a_value == 1 else '-'}(x{_signed_number(-h_value)})^2{_signed_number(k_value)}"
+    return {
+        "skill": "function_graphs",
+        "problem": f"For {equation}, find the vertex.",
+        "solution": _format_point((h_value, k_value)),
+        "difficulty": ranges["label"],
+    }
+
+
 def generate_problem(level=None, user_id=None):
     """Generate a practice problem at the requested adaptive difficulty."""
     if level is None:
@@ -602,6 +785,9 @@ def generate_problem(level=None, user_id=None):
         generator = random.choice((
             _generate_basic_linear_problem,
             _generate_two_sided_linear_problem,
+            _generate_coordinate_midpoint_problem,
+            _generate_coordinate_gradient_problem,
+            _generate_linear_graph_feature_problem,
         ))
         problem_data = generator(ranges)
     else:
@@ -609,6 +795,9 @@ def generate_problem(level=None, user_id=None):
             _generate_fractional_linear_problem,
             _generate_non_monic_quadratic_problem,
             _generate_rational_equation_problem,
+            _generate_coordinate_line_problem,
+            _generate_coordinate_distance_problem,
+            _generate_quadratic_graph_vertex_problem,
         ))
         problem_data = generator(ranges)
 
@@ -649,6 +838,16 @@ def _generate_problem_for_skill(skill, level, ranges):
     if skill == "rational_equations":
         return _generate_rational_equation_problem(ranges)
 
+    if skill == "coordinate_geometry":
+        if level >= 3:
+            return _generate_coordinate_line_problem(ranges)
+        return _generate_coordinate_gradient_problem(ranges)
+
+    if skill == "function_graphs":
+        if level >= 3:
+            return _generate_quadratic_graph_vertex_problem(ranges)
+        return _generate_linear_graph_feature_problem(ranges)
+
     if skill == "expanding_brackets":
         return _generate_parentheses_linear_problem(ranges)
 
@@ -666,6 +865,18 @@ def _generate_problem_for_skill(skill, level, ranges):
         return _generate_fractional_linear_problem(ranges)
 
     return generate_problem(level=level)
+
+
+def generate_problem_for_skill(skill, level=None, user_id=None):
+    """Generate a practice problem for one requested skill."""
+    if level is None:
+        level = get_difficulty(user_id)
+
+    level = max(1, int(level))
+    ranges = _difficulty_ranges(level)
+    problem_data = _generate_problem_for_skill(skill, level, ranges)
+    set_current_topic(problem_data["skill"], user_id=user_id)
+    return problem_data
 
 
 def _recent_problem_texts(user_id=None):

@@ -20,6 +20,7 @@ from core.progression import (
     clear_student_steps,
     generate_adaptive_problem,
     generate_problem,
+    generate_problem_for_skill,
     get_difficulty,
     get_student_steps,
 )
@@ -182,7 +183,11 @@ def _handle_harder_problem(context):
 
 
 def _handle_linear_problem(context):
-    problem = generate_problem(level=2, user_id=context.user_id)
+    problem = generate_problem_for_skill(
+        "linear_equations",
+        level=2,
+        user_id=context.user_id,
+    )
     return _build_explanation(
         answer=problem["problem"],
         why="This keeps the practice focused on linear equations.",

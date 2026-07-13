@@ -30,6 +30,9 @@ practise and check their understanding.
 - Working-space validation for student method lines
 - Lesson pages with worked examples and common mistakes
 - Progress page showing accuracy, difficulty, skills, and recent activity
+- Function graph interpretation for supported linear and quadratic functions
+- Coordinate geometry practice for midpoint, gradient, distance, and line equations
+- Rule-based misconception feedback for selected algebra, graph, and coordinate errors
 
 ## Teacher Feedback
 
@@ -51,6 +54,9 @@ I used this feedback to identify the next development priorities.
 - Fixed a leading-negative parsing bug in worded equations
 - Improved topic labels for quadratics, factoring, and trigonometry
 - Improved follow-up prompts so they are more specific and useful
+- Added graph interpretation after teacher feedback requested more visual representations
+- Added coordinate geometry and graph-feature practice problems
+- Added targeted feedback for reversed gradient, missing square root, midpoint, and graph-feature mistakes
 - Added regression tests for the bugs found during testing
 - Captured updated screenshots from the running application
 
@@ -61,7 +67,7 @@ The project includes automated tests for the main learning workflows.
 Latest verification:
 
 ```text
-64 tests passed
+90 tests passed
 ```
 
 Tested manually with examples including:
@@ -71,6 +77,9 @@ Tested manually with examples including:
 - `factor x^2 - 9`
 - `find x if sin 35 = x/12`
 - `question: x^2 - 5x + 6 = 0 answer: x = 2`
+- `explain the graph of y = x^2 - 4x + 3`
+- `find the equation of the line through (2, 3) and (6, 11)`
+- `Find the gradient between (2, 3) and (6, 11)` with an incorrect answer of `1/2`
 
 ## Demo Flow
 
@@ -95,6 +104,7 @@ Tested manually with examples including:
 | Lessons | `static/screenshots/lessons-page.png` |
 | Progress dashboard | `static/screenshots/dashboard.png` |
 | Architecture | `static/screenshots/architecture.png` |
+| Automated test results | `application_screenshots/07_test_results.png` |
 
 ## Architecture Summary
 
@@ -118,8 +128,8 @@ questions may still be unsupported.
 
 ## Future Improvements
 
-- Add graph visuals for linear and quadratic equations
-- Improve common mistake detection
+- Add more visual representations inside individual response cards
+- Improve common mistake detection after further student testing
 - Add more Year 10 and Year 11 level problem generators
 - Add teacher-facing summaries if the learning data model becomes stronger
 - Improve long-term data storage if user accounts are added later

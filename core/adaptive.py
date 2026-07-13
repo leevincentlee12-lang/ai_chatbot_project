@@ -23,6 +23,8 @@ SKILL_LABELS = {
     "fractions": "Fractions",
     "indices": "Indices",
     "rational_equations": "Rational Equations",
+    "coordinate_geometry": "Coordinate Geometry",
+    "function_graphs": "Function Graphs",
 }
 
 MISCONCEPTION_SKILL_MAP = {
@@ -32,6 +34,10 @@ MISCONCEPTION_SKILL_MAP = {
     "DISTRIBUTIVE_ERROR": "expanding_brackets",
     "COMBINING_UNLIKE_TERMS": "simplifying_expressions",
     "ARITHMETIC_ERROR": "linear_equations",
+    "GRADIENT_RUN_OVER_RISE": "coordinate_geometry",
+    "MIDPOINT_ONE_COORDINATE": "coordinate_geometry",
+    "DISTANCE_MISSING_SQUARE_ROOT": "coordinate_geometry",
+    "GRAPH_INTERCEPT_CONFUSION": "function_graphs",
 }
 
 

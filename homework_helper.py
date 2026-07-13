@@ -79,6 +79,7 @@ _EXPORTS = {
         "clear_student_steps",
         "generate_adaptive_problem",
         "generate_problem",
+        "generate_problem_for_skill",
         "get_difficulty",
         "get_guided_session",
         "get_learning_state",

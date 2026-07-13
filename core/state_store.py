@@ -32,6 +32,8 @@ DEFAULT_SKILLS = {
     "fractions": {"score": 0, "attempts": 0},
     "indices": {"score": 0, "attempts": 0},
     "rational_equations": {"score": 0, "attempts": 0},
+    "coordinate_geometry": {"score": 0, "attempts": 0},
+    "function_graphs": {"score": 0, "attempts": 0},
 }
 
 BASE_DIR = Path(__file__).resolve().parents[1]

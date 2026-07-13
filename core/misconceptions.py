@@ -79,6 +79,48 @@ MISCONCEPTIONS = {
         ),
         "practice_area": "Checking solutions by substitution",
     },
+    "GRADIENT_RUN_OVER_RISE": {
+        "label": "Gradient formula reversed",
+        "explanation": (
+            "You may have used run over rise instead of rise over run when "
+            "calculating the gradient between two points."
+        ),
+        "recommendation": (
+            "Practise using gradient = change in y divided by change in x."
+        ),
+        "practice_area": "Coordinate geometry gradients",
+    },
+    "MIDPOINT_ONE_COORDINATE": {
+        "label": "Incomplete midpoint averaging",
+        "explanation": (
+            "You may have averaged one coordinate correctly but not the other."
+        ),
+        "recommendation": (
+            "Practise applying the midpoint formula to x-values and y-values separately."
+        ),
+        "practice_area": "Coordinate geometry midpoints",
+    },
+    "DISTANCE_MISSING_SQUARE_ROOT": {
+        "label": "Missing square root in distance formula",
+        "explanation": (
+            "You may have added the squared changes but forgotten the final square root."
+        ),
+        "recommendation": (
+            "Practise the full distance formula: square, add, then take the square root."
+        ),
+        "practice_area": "Coordinate geometry distance",
+    },
+    "GRAPH_INTERCEPT_CONFUSION": {
+        "label": "Gradient and intercept confusion",
+        "explanation": (
+            "You may have confused the gradient with an intercept when reading "
+            "a function equation."
+        ),
+        "recommendation": (
+            "Practise identifying m and c in y = mx + c and reading graph features separately."
+        ),
+        "practice_area": "Function graph features",
+    },
 }
 
 

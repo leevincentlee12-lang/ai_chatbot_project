@@ -8,6 +8,7 @@ from homework_helper import (
     evaluate_answer_details,
     factor_expression,
     generate_problem,
+    generate_problem_for_skill,
     generate_lesson,
     gradient_between_points,
     graph_function_data,
@@ -106,10 +107,68 @@ class HomeworkHelperAppTests(unittest.TestCase):
     def test_hard_practice_no_longer_uses_plain_two_sided_linear_template(self):
         for _ in range(20):
             problem = generate_problem(level=3, user_id="hard-template-test")
-            self.assertTrue(
-                "/" in problem["problem"] or "x^2" in problem["problem"],
-                problem["problem"],
+            self.assertIn(
+                problem["skill"],
+                {
+                    "linear_equations",
+                    "quadratics",
+                    "rational_equations",
+                    "coordinate_geometry",
+                    "function_graphs",
+                },
             )
+            if problem["skill"] == "linear_equations":
+                self.assertIn("/", problem["problem"])
+
+    def test_coordinate_geometry_practice_problem_is_checkable(self):
+        problem = generate_problem_for_skill(
+            "coordinate_geometry",
+            level=3,
+            user_id="coordinate-practice-test",
+        )
+
+        self.assertEqual(problem["skill"], "coordinate_geometry")
+        self.assertIn("line", problem["problem"])
+
+        payload = evaluate_answer_details(problem["problem"], problem["solution"])
+        self.assertEqual(payload["status"], "correct")
+        self.assertIn("Coordinate Geometry", payload["details"])
+
+    def test_function_graph_practice_problem_is_checkable(self):
+        problem = generate_problem_for_skill(
+            "function_graphs",
+            level=2,
+            user_id="graph-practice-test",
+        )
+
+        self.assertEqual(problem["skill"], "function_graphs")
+        self.assertIn("For y =", problem["problem"])
+
+        payload = evaluate_answer_details(problem["problem"], str(problem["solution"]))
+        self.assertEqual(payload["status"], "correct")
+        self.assertIn("Function Graphs", payload["details"])
+
+    def test_coordinate_practice_detects_reversed_gradient_misconception(self):
+        payload = evaluate_answer_details(
+            "Find the gradient between (2, 3) and (6, 11).",
+            "1/2",
+            user_id="coordinate-misconception-test",
+        )
+
+        self.assertEqual(payload["status"], "incorrect")
+        self.assertEqual(payload["misconception"]["id"], "GRADIENT_RUN_OVER_RISE")
+        self.assertIn("rise over run", payload["details"])
+
+    def test_graph_practice_detects_gradient_intercept_confusion(self):
+        payload = evaluate_answer_details(
+            "For y = 2x + 3, find the gradient.",
+            "3",
+            user_id="graph-misconception-test",
+        )
+
+        self.assertEqual(payload["status"], "incorrect")
+        self.assertEqual(payload["misconception"]["id"], "GRAPH_INTERCEPT_CONFUSION")
+        self.assertIn("Gradient and intercept confusion", payload["details"])
 
     def test_quadratic_practice_accepts_complete_solution_set(self):
         payload = evaluate_answer_details("x^2 - 5x + 6 = 0", "x = 2 or x = 3")

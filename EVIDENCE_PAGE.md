@@ -66,6 +66,10 @@ Based on testing and feedback, I improved the project by:
 - adding a Progress page for accuracy, difficulty, skill scores, and recent activity
 - improving algebra intent routing
 - improving hard practice questions with quadratics and rational equations
+- adding graph interpretation for gradients, intercepts, vertices, axes of symmetry, and discriminants
+- adding coordinate geometry support for midpoint, gradient, distance, and equations of lines
+- extending Practice Mode so graph and coordinate geometry questions can be generated and checked
+- adding misconception feedback for reversed gradient, incomplete midpoint averaging, missing square roots in distance, and graph-feature confusion
 - fixing a leading-negative parsing bug in worded equations
 - improving topic labels for quadratics, factoring, and trigonometry
 - adding regression tests for important bugs and algebra workflows
@@ -74,12 +78,63 @@ Based on testing and feedback, I improved the project by:
 Current verification:
 
 ```text
-64 automated tests passed
+90 automated tests passed
 ```
 
 Next planned improvements:
 
-- add graph visuals for linear and quadratic equations
-- improve common mistake feedback
+- add more visual representations inside individual response cards
+- improve common mistake feedback using more student testing evidence
 - add more Year 10 and Year 11 style questions
 - improve teacher-facing summaries if the learning data model becomes stronger
+
+## Example Explanation For Applications
+
+Before this improvement, Practice Mode mostly generated algebra-equation
+questions. That meant graph and coordinate geometry features could be explained
+in chat, but were not yet integrated into the adaptive practice workflow.
+
+After the improvement, Practice Mode can generate and check questions such as:
+
+```text
+Find the gradient between (2, 3) and (6, 11).
+```
+
+If a student answers `1/2`, the system recognises that the student likely used
+run over rise instead of rise over run. The feedback explains the issue,
+records the misconception, updates the coordinate geometry skill score, and
+recommends targeted practice.
+
+This matters because it shows the project moving from a simple solver toward a
+learning system that can detect specific patterns in student mistakes.
+
+## Screenshot Evidence Set
+
+Use these screenshots in the application evidence section:
+
+- Homepage: `static/screenshots/homepage.png`
+- Step-by-step solution: `application_screenshots/02_step_by_step_solution.png`
+- Wrong answer feedback: `application_screenshots/03_wrong_answer_feedback.png`
+- Practice Mode: `application_screenshots/04_practice_mode.png`
+- Progress dashboard: `application_screenshots/05_progress_dashboard.png`
+- Architecture: `application_screenshots/06_architecture.png`
+- Automated test results: `application_screenshots/07_test_results.png`
+
+Useful before/after improvement images:
+
+- `improvement_before_after_images/02_harder_practice_before_after.png`
+- `improvement_before_after_images/03_working_space_before_after.png`
+- `improvement_before_after_images/04_common_mistake_feedback_after.png`
+- `improvement_before_after_images/05_progress_tracking_after.png`
+
+## Technical Learning
+
+Through this project I learned how to:
+
+- separate a large Flask project into smaller modules with clearer responsibilities
+- use deterministic routing and intent classification instead of large chains of fragile if-statements
+- use SymPy to parse and compare algebraic expressions and equations
+- avoid rounding errors by preserving exact fractions in coordinate geometry
+- build regression tests for bugs found through real testing
+- connect answer checking to progress tracking, misconception history, and adaptive recommendations
+- deploy a Flask project publicly using GitHub and Render

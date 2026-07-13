@@ -66,6 +66,8 @@ mathematical topics or adding unnecessary features.
 - Function Graph Explorer for supported linear and quadratic functions
 - Graph interpretation for gradients, intercepts, vertices, axes of symmetry, and discriminants
 - Coordinate geometry support for midpoint, gradient, distance, and line-equation questions
+- Graph and coordinate geometry practice generation with answer checking
+- Mistake feedback for reversed gradient, midpoint, distance-formula, and graph-feature errors
 - Clean error handling for malformed equations and unsupported input
 
 ## Supported Algebra Areas
@@ -80,6 +82,7 @@ mathematical topics or adding unnecessary features.
 - Linear and quadratic function graphing
 - Coordinate geometry foundations: midpoint, gradient, distance, and equations of lines
 - Generated practice problems at different difficulty levels
+- Generated graph and coordinate geometry practice problems
 
 ## Teacher Feedback
 
@@ -174,7 +177,7 @@ python -m unittest discover -s tests
 Latest test run:
 
 ```text
-86 tests passed
+90 tests passed
 ```
 
 ## Setup
@@ -240,7 +243,7 @@ a pause can take longer.
 
 - Expand graph visuals beyond the current linear and quadratic function support
 - Add more coordinate-geometry workflows after the current midpoint, distance, gradient, and line-equation support
-- Improve common mistake detection and feedback
+- Improve common mistake detection and feedback beyond the current algebra, graph, and coordinate rules
 - Add more Year 10 and Year 11 style question generators
 - Add teacher-facing summaries after the learning data model is more mature
 - Move long-term learning data to a hosted production database if needed

@@ -84,8 +84,8 @@ def equation_of_line_through_points(point_a, point_b):
     if intercept == 0:
         return f"y = {x_term}"
     if intercept > 0:
-        return f"y = {x_term} + {_format_value(intercept)}"
-    return f"y = {x_term} - {_format_value(abs(intercept))}"
+        return f"y = {x_term} + {_format_expression(intercept)}"
+    return f"y = {x_term} - {_format_expression(abs(intercept))}"
 
 
 def _operation_from_question(question):
